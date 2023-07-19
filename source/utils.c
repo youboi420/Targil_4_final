@@ -4,6 +4,7 @@
 #include <search.h>
 #include <stdio.h>
 #include <string.h>
+// this is a test
 
 
 char *MODES_STR[] = {
