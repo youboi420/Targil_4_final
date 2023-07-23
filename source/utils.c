@@ -1,13 +1,12 @@
+#include "../include/helper_functions.h"
 #include "../include/utils.h"
 #include "../include/first_parse.h"
 #include <ctype.h>
 #include <search.h>
 #include <stdio.h>
 #include <string.h>
-// this is a test
-// this is another test
 
-char *MODES_STR[] = {
+/* char *MODES_STR[] = {
     "LABEL",
     "MOV",
     "CMP",
@@ -27,10 +26,10 @@ char *MODES_STR[] = {
     "STOP",
     "COMMENT"
 };
-
+ */
 int check_mem_mode(char *buffer){
-    int i = 0, ret_val = 0, index = 0, start, end, comma_count = 0;
-    char * reg_name = NULL, *buffer_to_check = (char*)malloc(strlen(buffer) + 2),str[4], reg[4];
+    int i = 0, ret_val = OTHER, index = 0, start, end, comma_count = 0, flag;
+    char * reg_name = NULL, *buffer_to_check = (char*)malloc(strlen(buffer) + 2),str[4], reg[4], skip = 0;
     strcpy(buffer_to_check, buffer);
     strcat(buffer_to_check, " ");
     if (strstr(buffer_to_check, "stop") == NULL){
@@ -41,26 +40,26 @@ int check_mem_mode(char *buffer){
         while(isspace(buffer_to_check[index])) ++index;
         if (buffer_to_check[index] == ',') return COMMENT;
         
+        if (buffer_to_check[index] == '#') ret_val = immediate;
         for(i = 0; i < 3; ++i){
             if (buffer_to_check[index + i] != ',' && buffer_to_check[index + i] != ' ') reg[i] = buffer_to_check[index + i];
             else break;
         }
-        
         reg[i] = '\0';
-
         index += i;
         if (buffer_to_check[index] == ',' || buffer_to_check[index] == ' ') {
             for (i = 0; i < 16; ++i) {
-            reg_name = malloc(sizeof(char) * 4);
-            strcpy(reg_name, "r");
-            sprintf(str, "%d", i);
-            strcat(reg_name, str);
-            if (strcmp(reg_name, reg) == 0){
-                ret_val = 1;
+                reg_name = malloc(sizeof(char) * 4);
+                strcpy(reg_name, "r");
+                sprintf(str, "%d", i);
+                strcat(reg_name, str);
+                if (strcmp(reg_name, reg) == 0){
+                    
+                    ret_val = direct;
+                    free(reg_name);
+                    break;
+                }
                 free(reg_name);
-                break;
-            }
-            free(reg_name);
             }
         }
         else while((isspace(buffer_to_check[index]) || buffer_to_check[index] == ',') && comma_count > 1){
@@ -77,25 +76,35 @@ int check_mem_mode(char *buffer){
         ++index;
         while(isspace(buffer_to_check[index])) ++index;
 
+        if (buffer_to_check[index] == '#'){
+            flag = skip = 1;
+            // ret_val = ret_val & 1;
+            if (ret_val != immediate) ret_val = immediate;
+        }
         for(i = 0; i < 3; ++i){
             if (buffer_to_check[index + i] != ',' && buffer_to_check[index + i] != ' ') reg[i] = buffer_to_check[index + i];
             else break;
         }
+        reg[i] = '\0';
         index += i;
         if (buffer[index] == ',' ) ret_val = COMMENT;
-        if (buffer_to_check[index] == ' ' || buffer_to_check[index] == '\n' || buffer_to_check[index] == '\0') {
+        if (buffer_to_check[index] == ' ' || buffer_to_check[index] == '\n' || buffer_to_check[index] == '\0' && !skip) {
+            flag = 0;
             for (i = 0; i < 16; ++i) {
-            reg_name = malloc(sizeof(char) * 4);
-            strcpy(reg_name, "r");
-            sprintf(str, "%d", i);
-            strcat(reg_name, str);
-            if (strcmp(reg_name, reg) == 0){
-                ret_val =  ret_val && 1;
+                reg_name = malloc(sizeof(char) * 4);
+                strcpy(reg_name, "r");
+                sprintf(str, "%d", i);
+                strcat(reg_name, str);
+                if (strcmp(reg_name, reg) == 0){
+                    flag = 1;
+                    free(reg_name);
+                    break;
+                }
                 free(reg_name);
-                break;
             }
-            free(reg_name);
-            }
+            if (strlen(reg) != 0 && i >= 16 && !skip)  ret_val = OTHER;
+            if(strlen(reg) != 0 && flag && i < 16) if(ret_val == direct) ret_val = direct;
+        
         }
         else{
             if (ret_val != COMMENT)
@@ -105,30 +114,34 @@ int check_mem_mode(char *buffer){
     else{
         ret_val = STOP;
     }
-        
-    return  ret_val;
+    if (ret_val == 1) ret_val = direct;
+    return ret_val;
 }
 
 int get_mode(char * instr){
     int resault = check_inst(instr);
     int regs_mode = check_mem_mode(instr);
     if (resault != COMMENT){
-        if (regs_mode == 1){
-            printf("[1] Internal memory mode\n");
+        if (regs_mode == direct){
+            printf("[1] Direct memory mode\n");
         }
-        else if (regs_mode == COMMENT){
+        else if (regs_mode == immediate){
+            printf("[0] Immediate memory mode\n");
+        }
+        else if (regs_mode == COMMA){
             printf(" , :(\n");
         }
         else if (regs_mode == STOP){
             printf("Shoudld stop the asm prog\n");
         }
-        else if (regs_mode == 0){
-            printf("[0] External/Relocatable memory mode\n");
+        else if (regs_mode == OTHER){
+            printf("[?] External/Relocatable memory mode\n");
         }
     }
     else{
         printf("This is a comment should ignore\n");
     }
+    printf("Comment: %i\n", resault == COMMENT);
         
     /* switch (res) {
         case CMP:

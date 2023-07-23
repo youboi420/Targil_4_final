@@ -1,10 +1,60 @@
 #include "../include/helper_functions.h"
 #include "../include/first_parse.h"
 
+#define LINE 21
+
+char hex_map[] ={'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+
 int trim(char * str_to_cut){
     int len = strlen(str_to_cut), i = 0;
     while(i < len && isspace(str_to_cut[i])) ++i;
     return i;
+}
+
+    /*  
+        add something1, something2
+        ^[\s\t]*[rts][\s\t]*$
+                    rts                       
+        ^[\s\t]*[stop][\s\t]*$
+
+        add r3, r5
+            0111 | 0000 | 0101 | 1011 | 0001            
+            0100 | 0100 | 0001 | 1011 | 0001
+            0100 | 0000 | 0111 | 1011 | 0001
+        - Example -
+        0100 | 0000 | 0101 | 1011 | 0001
+        A4   -  B0   - C3   - Dc   - E1 
+    */
+char * word_to_ob_line(char * word){
+    char * ob_line = (char *)malloc(sizeof(char) * LINE);
+    int i = 0, j = i, sum = 0x0, buffer_index = 0, local_i = 0;
+    unsigned int mask;
+    
+    if(!word){
+        return NULL;
+    }
+
+    for (i = 0; i <= 16; i += 4){
+        sum = mask = 0;
+        for(j = 3; j >= 0; --j){
+            if (! word[i + j]) return NULL;
+            mask = (word[i + j]=='1') ? 1 : 0;
+            if (mask){
+                mask <<= (3 - j);
+            }
+            sum |= mask;
+        }
+        if (i > 0){
+            ob_line[buffer_index++] = (char)('A' + (int)(i/4));
+        }
+        else{
+            ob_line[buffer_index++] = (char)('A');
+        }
+        ob_line[buffer_index++] = hex_map[sum];
+        ob_line[buffer_index++] = '-';
+    }
+    ob_line[14] = '\0';
+    return ob_line;
 }
 
 int alpha_beta(char c){

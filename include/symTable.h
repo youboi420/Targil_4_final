@@ -5,20 +5,39 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* 
+    switch (i) {
+        case 0:
+            strcat(buffer, "external, ");
+            break;
+        case 1:
+            strcat(buffer, "entry, ");
+            break;
+        case 2:
+            strcat(buffer, "data, ");
+            break;
+        case 3:
+            strcat(buffer, "code, ");
+            break;
+    }
+*/
+
 typedef struct symNode{
     int arr[N];
+    int IC_INFO;
     int id;
     int value;
     int baseAddress;
     int offset;
     char * symbol;
     struct symNode* next;
-}symNode, *symPtr;
+}symNode, *symPTR;
 
-symPtr create_symTable_node();
-void insert_symTable(symPtr* root, symPtr node);
-void insertData_symTable(symPtr node, char *sym,int value, int baseAddress ,int offset , int arr[N]);
-void printToFile_symTable(symPtr* root);
-void destroy_symTable(symPtr root);
+symPTR create_symTable_node();
+void update_sym_addr(symPTR node, int baseAddress ,int offset);
+void insert_symTable(symPTR* root, symPTR node);
+void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int IC);
+void printToFile_symTable(symPTR* root);
+void destroy_symTable(symPTR *root);
 
 #endif //TARGIL_4_SYMTABLE_H

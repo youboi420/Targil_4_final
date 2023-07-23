@@ -11,4 +11,4 @@ typedef enum MODES {LABEL = 100, MOV, CMP, ADD, SUB, LEA, CLR, NOT, INC, DEC, JM
 bool check_macro_is_defined(char * macro_name);
 int check_inst(char * buffer);
 char* get_macro_name(char * buffer, int mode);
-void macro_proccess(char *file_name);
+int macro_proccess(char *file_name);

@@ -1,9 +1,8 @@
 #include "../include/symTable.h"
 
-
-symPtr create_symTable_node(){
+symPTR create_symTable_node(){
     static int id=0;
-    symPtr newSym = (symPtr) malloc(sizeof(symNode));
+    symPTR newSym = (symPTR) malloc(sizeof(symNode));
     newSym->id = id;
     id++;
     newSym->offset = -1;
@@ -16,37 +15,43 @@ symPtr create_symTable_node(){
     return newSym;
 }
 
-void insert_symTable(symPtr* root, symPtr node){
+void insert_symTable(symPTR* root, symPTR node){
     if(*root==NULL)
         (*root)=node;
     else{
-        symPtr temp = *root;
+        symPTR temp = *root;
         while(temp->next)
-            temp = (symPtr)temp->next;
+            temp = (symPTR)temp->next;
         temp->next = (struct symNode *) node;
     }
 }
 
-void insertData_symTable(symPtr node, char *sym,int value, int baseAddress ,int offset , int arr[N]){
+void update_sym_addr(symPTR node, int baseAddress ,int offset){
+    node->baseAddress = baseAddress;
+    node->offset = offset;
+}
+
+void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int IC){
     node->offset = offset;
     node->value = value;
     node->baseAddress =baseAddress;
     node->symbol = sym;
-    node->next = NULL;
+    node->IC_INFO = IC;
     for(int i=0; i<N;i++)
         node->arr[i] = arr[i];
+    node->next = NULL;
 }
 
-void printToFile_symTable(symPtr* root){
+void printToFile_symTable(symPTR* root){
     FILE * fp = fopen("symTable.txt", "w");
     if(fp==NULL){
         printf("error in open file!\n");
         return;
     }
     char* buffer;
-    char str[5];
+    char str[10];
     int i;
-    symPtr temp = *root;
+    symPTR temp = *root;
     while(temp){
         buffer= malloc(sizeof(char)*128);
         strcpy(buffer, temp->symbol);
@@ -84,4 +89,13 @@ void printToFile_symTable(symPtr* root){
     }
     fclose(fp);
 }
-void destroy(symPtr root);
+
+void destroy(symPTR *root){
+    symPTR temp = *root, save;
+    while(temp){
+        free(temp->symbol);
+        save = temp->next;
+        free(temp);
+        temp = save;
+    }
+}
