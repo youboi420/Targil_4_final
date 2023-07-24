@@ -5,43 +5,6 @@
 #include <regex.h>
 #include <string.h>
 
-int check_arrtib(char *buffer){
-    int index = 0, ret_val = 0;
-    char check[10];
-    while(index < 9 && buffer[index] && !isspace(buffer[index])){
-        if (buffer[index]) check[index] = buffer[index];
-        ++index;
-    }
-    check[index] = '\0';
-
-    if (strcmp(check, ".entry") == 0) ret_val = ENT;
-    if (strcmp(check, ".data") == 0) ret_val = DATA;
-    if (strcmp(check, ".extern") == 0) ret_val = EXT;
-    if (strcmp(check, ".string") == 0) ret_val = STR;
-    return ret_val;
-}
-
-int check_label(char * line){
-    regex_t rgx;
-    int resualt;
-    const char* main_pattern = "^.*[:|.].*$"; // /* insert out special pattern */ = "^[ \t\n]*\\0?$";
-    resualt = regcomp(&rgx, main_pattern, REG_EXTENDED);
-    if (resualt) {
-        regfree(&rgx);
-        return -1; 
-    }
-    resualt = regexec(&rgx, line, 0, NULL, 0);
-    regfree(&rgx);
-    if (!resualt) {
-        return 1;
-    } else if (resualt == REG_NOMATCH) {
-        return 0;
-    } else {
-        return -1;
-    }
-    return resualt;
-
-}
 
 /**
  * @brief check if there is any assembly instructions in the given buffer
@@ -241,7 +204,7 @@ int macro_proccess(char *file_name){
                 p_ent = hsearch(ent, FIND);
                 if (p_ent != NULL){
                     // printf("[!] Found macro %s, content: \n%s\n", macro_name, (char*)p_ent->data);
-                    fputs("\n", w_file);
+                    // fputs("\n", w_file);
                     fputs((char*)p_ent->data, w_file);
                 }
                 else{

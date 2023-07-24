@@ -4,6 +4,7 @@ MAIN:  prn    #48
         inc  r1
         mov r1, Z
     endm
+    mov R19, r1
     lea r4, #3
     x: lea L, r2    
     inc r5
@@ -12,3 +13,7 @@ MAIN:  prn    #48
         inc m3
 .entry MAIN
     stop
+M: .data 1,2,3
+K: .string 1,2
+l: .data 1,2
+p: .data 1,2

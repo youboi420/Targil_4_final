@@ -22,3 +22,5 @@ int get_mode(char * instr);
 unsigned int instruction_to_word(char * instr);
 void word_to_string(unsigned int n, char ** str_p);
 LINE_TYPE check_line_type(char * buffer);
+int check_label_type(char * line, const char * main_pattern);
+int check_label(char * line);

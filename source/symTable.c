@@ -16,13 +16,14 @@ symPTR create_symTable_node(){
 }
 
 void insert_symTable(symPTR* root, symPTR node){
-    if(*root==NULL)
+    if(*root==NULL){
         (*root)=node;
+    }
     else{
         symPTR temp = *root;
         while(temp->next)
-            temp = (symPTR)temp->next;
-        temp->next = (struct symNode *) node;
+            temp = temp->next;
+        temp->next = node;
     }
 }
 
@@ -31,12 +32,11 @@ void update_sym_addr(symPTR node, int baseAddress ,int offset){
     node->offset = offset;
 }
 
-void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int IC){
+void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int START_IC, int END_IC){
     node->offset = offset;
     node->value = value;
     node->baseAddress =baseAddress;
     node->symbol = sym;
-    node->IC_INFO = IC;
     for(int i=0; i<N;i++)
         node->arr[i] = arr[i];
     node->next = NULL;
@@ -86,11 +86,12 @@ void printToFile_symTable(symPTR* root){
         strcat(buffer, "\n");
         fputs(buffer, fp);
         free(buffer);
+        temp = temp->next;
     }
     fclose(fp);
 }
 
-void destroy(symPTR *root){
+void destroy_symTable(symPTR *root){
     symPTR temp = *root, save;
     while(temp){
         free(temp->symbol);
@@ -98,4 +99,5 @@ void destroy(symPTR *root){
         free(temp);
         temp = save;
     }
+    *root = NULL;
 }

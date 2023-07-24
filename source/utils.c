@@ -41,7 +41,7 @@ int check_mem_mode(char *buffer){
         while(isspace(buffer_to_check[index])) ++index;
         if (buffer_to_check[index] == ',') return COMMENT;
         
-        if (buffer_to_check[index] == '#') ret_val = immediate_addr;
+        if (buffer_to_check[index] == '#') ret_val = direct_addr;
         for(i = 0; i < 3; ++i){
             if (buffer_to_check[index + i] != ',' && buffer_to_check[index + i] != ' ') reg[i] = buffer_to_check[index + i];
             else break;
@@ -80,7 +80,7 @@ int check_mem_mode(char *buffer){
         if (buffer_to_check[index] == '#'){
             flag = skip = 1;
             // ret_val = ret_val & 1;
-            if (ret_val != immediate_addr) ret_val = immediate_addr;
+            if (ret_val != immediate_addr) ret_val = direct_addr;
         }
         for(i = 0; i < 3; ++i){
             if (buffer_to_check[index + i] != ',' && buffer_to_check[index + i] != ' ') reg[i] = buffer_to_check[index + i];
@@ -88,7 +88,7 @@ int check_mem_mode(char *buffer){
         }
         reg[i] = '\0';
         index += i;
-        if (buffer[index] == ',' ) ret_val = COMMENT;
+        if (buffer[index] == ',' ) ret_val = COMMA;
         if (buffer_to_check[index] == ' ' || buffer_to_check[index] == '\n' || buffer_to_check[index] == '\0' && !skip) {
             flag = 0;
             for (i = 0; i < 16; ++i) {
@@ -143,7 +143,6 @@ int get_mode(char * instr){
     }
     else{
         if (resault == COMMENT){
-            printf("Comment\n");
             ret_val = COMMENT;
         } else if (ret_val != EMPTY){
             printf("Unknown error\n");
@@ -225,4 +224,45 @@ LINE_TYPE check_line_type(char *buffer){
     } else {
         return -1;
     }
+}
+
+int check_label_type(char * line, const char * main_pattern){
+    regex_t rgx;
+    int resualt;
+    resualt = regcomp(&rgx, main_pattern, REG_EXTENDED);
+    if (resualt) {
+        regfree(&rgx);
+        return -1; 
+    }
+    resualt = regexec(&rgx, line, 0, NULL, 0);
+    regfree(&rgx);
+    if (!resualt) {
+        return 1;
+    } else if (resualt == REG_NOMATCH) {
+        return 0;
+    } else {
+        return -1;
+    }
+    return resualt;
+}
+
+int check_label(char * line){
+    regex_t rgx;
+    int resualt;
+    const char* main_pattern = "^.*[:|.].*$"; // /* insert out special pattern */ = "^[ \t\n]*\\0?$";
+    resualt = regcomp(&rgx, main_pattern, REG_EXTENDED);
+    if (resualt) {
+        regfree(&rgx);
+        return -1; 
+    }
+    resualt = regexec(&rgx, line, 0, NULL, 0);
+    regfree(&rgx);
+    if (!resualt) {
+        return 1;
+    } else if (resualt == REG_NOMATCH) {
+        return 0;
+    } else {
+        return -1;
+    }
+    return resualt;
 }

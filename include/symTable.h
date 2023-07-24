@@ -24,7 +24,7 @@
 
 typedef struct symNode{
     int arr[N];
-    int IC_INFO;
+    int START_IC, END_IC;
     int id;
     int value;
     int baseAddress;
@@ -36,7 +36,7 @@ typedef struct symNode{
 symPTR create_symTable_node();
 void update_sym_addr(symPTR node, int baseAddress ,int offset);
 void insert_symTable(symPTR* root, symPTR node);
-void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int IC);
+void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int START_IC, int END_IC);
 void printToFile_symTable(symPTR* root);
 void destroy_symTable(symPTR *root);
 
