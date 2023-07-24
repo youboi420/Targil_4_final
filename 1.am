@@ -1,12 +1,12 @@
 MAIN:  prn    #48
-
-
 ; this is a comment
     lea r4, #3
-    x:
-    lea L, r2
+    x: lea L, r2    
+    inc r5
+
         inc  r1
         mov r1, Z
                 m2 
         inc m3
 .entry MAIN
+    stop

@@ -20,13 +20,13 @@ bool assembler(char * file_name){
     
     /* stage 1 of macro parse  */
     printf("---------STARTED STAGE 1 MACRO PARSE---------------\n");
+    hcreate(1024);
     res = macro_proccess(file_name);
+    hdestroy();
     printf("---------ENDED STAGE 1 MACRO PARSE---------------\n\n");
     if (res != PASSED){
         switch (res) {
             case LINE_EXCEPTION:
-                break;
-            case SYNTAX_EXCEPTION:
                 break;
             case FILE_EXCEPTION:
                 break;
@@ -35,8 +35,15 @@ bool assembler(char * file_name){
         }
     }
     printf("---------STARTED STAGE 2 PARSE 1---------------\n");
-    parse2_file_stage_1(macro_parsed);
-    printf("---------ENDED STAGE 2 PARSE 1---------------\n\n");
+    hcreate(1024);
+    int IC = 0, DC = 0;
+    res = parse2_file_stage_1(macro_parsed, &IC, &DC);
+    printf("---------ENDED STAGE 2 PARSE 1 STOPPED: %i | PASSED: %i---------------\n\n", res == STOP, res == PASSED);
+
+    // printf("---------STARTED STAGE 2 PARSE 2---------------\n");
+    // res = parse2_file_stage_2(macro_parsed, &IC, &DC, EXPORT_FILES);
+    // printf("---------ENDED STAGE 2 PARSE 2 STOPPED: %i | PASSED: %i---------------\n\n", res == STOP, res == PASSED);
+    hdestroy();
     return ret_val;
 }
 
@@ -63,9 +70,7 @@ int main(int argc, char**argv){
         exit(EXIT_FAILURE);
     }
     for (i = 1; i < argc; ++i) {
-        hcreate(1024);
         assembler(argv[i]);
-        hdestroy();
     }
     return EXIT_SUCCESS;
 }

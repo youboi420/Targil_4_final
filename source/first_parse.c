@@ -1,7 +1,47 @@
 #include "../include/first_parse.h"
 #include "../include/my_error.h"
 #include "../include/utils.h"
+#include <ctype.h>
+#include <regex.h>
+#include <string.h>
 
+int check_arrtib(char *buffer){
+    int index = 0, ret_val = 0;
+    char check[10];
+    while(index < 9 && buffer[index] && !isspace(buffer[index])){
+        if (buffer[index]) check[index] = buffer[index];
+        ++index;
+    }
+    check[index] = '\0';
+
+    if (strcmp(check, ".entry") == 0) ret_val = ENT;
+    if (strcmp(check, ".data") == 0) ret_val = DATA;
+    if (strcmp(check, ".extern") == 0) ret_val = EXT;
+    if (strcmp(check, ".string") == 0) ret_val = STR;
+    return ret_val;
+}
+
+int check_label(char * line){
+    regex_t rgx;
+    int resualt;
+    const char* main_pattern = "^.*[:|.].*$"; // /* insert out special pattern */ = "^[ \t\n]*\\0?$";
+    resualt = regcomp(&rgx, main_pattern, REG_EXTENDED);
+    if (resualt) {
+        regfree(&rgx);
+        return -1; 
+    }
+    resualt = regexec(&rgx, line, 0, NULL, 0);
+    regfree(&rgx);
+    if (!resualt) {
+        return 1;
+    } else if (resualt == REG_NOMATCH) {
+        return 0;
+    } else {
+        return -1;
+    }
+    return resualt;
+
+}
 
 /**
  * @brief check if there is any assembly instructions in the given buffer
@@ -11,23 +51,24 @@
  */
 int check_inst(char * buffer){
     int ret_val = 0, index = 0, i = 0;
-    char INST[4];
+    char INST[4], *copy_buff = (char*)malloc(strlen(buffer));
     while(isspace(buffer[index])) ++index;
+    strcpy(copy_buff, &buffer[index]);
     
     if (buffer[index] == ';') return COMMENT;
+    if (check_label(copy_buff))           return LABEL;
 
     
     for(i = 0; i < 3; ++i){
         INST[i] = buffer[index + i];
     }
+
     INST[3] = '\0';
     
     if (buffer[index + i] != 'p' || buffer[index + i] != ' ') ret_val = OTHER;
 
-    if (strcmp(INST, ":") == 0){
-        ret_val = LABEL;
-    }
-    else if (strcmp(INST, "mov") == 0){ /* 1,2,3 */
+    
+    if (strcmp(INST, "mov") == 0){ /* 1,2,3 */
         ret_val = MOV;
     }
     else if (strcmp(INST, "cmp") == 0){ /* 0,1,2,3 */ 
@@ -192,7 +233,6 @@ int macro_proccess(char *file_name){
                 }
                 
                 /* if (! instruction( ) -> insert the macro of current line ("            m1              ") ) */
-                printf("[#] Macro's %s content:\n%s", macro_name, saved_content);
                 macro_content[0] = '\0'; /* for next iteration */
             }
             else if(check_inst(buffer) == -1){
@@ -201,11 +241,11 @@ int macro_proccess(char *file_name){
                 p_ent = hsearch(ent, FIND);
                 if (p_ent != NULL){
                     // printf("[!] Found macro %s, content: \n%s\n", macro_name, (char*)p_ent->data);
+                    fputs("\n", w_file);
                     fputs((char*)p_ent->data, w_file);
                 }
                 else{
                     fputs(buffer, w_file);
-                    printf("Macro: %s not found\n", macro_name);
                 }
                 // fputs(buffer, w_file);
                 // printf("buffer? : %s", buffer);

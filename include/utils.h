@@ -1,4 +1,4 @@
-typedef enum LINE_TYPE {EMPTY = 15 , COMMENT, COMMA, OTHER = -1} LINE_TYPE;
+typedef enum LINE_TYPE {EMPTY = 20 , COMMENT, COMMA, OTHER = -1} LINE_TYPE;
 typedef enum REG{   r0 = 0x0, 
                     r1,
                     r2,

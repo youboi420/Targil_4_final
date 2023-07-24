@@ -2,6 +2,7 @@
 #include "../include/utils.h"
 #include "../include/first_parse.h"
 #include <ctype.h>
+#include <regex.h>
 #include <search.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +41,7 @@ int check_mem_mode(char *buffer){
         while(isspace(buffer_to_check[index])) ++index;
         if (buffer_to_check[index] == ',') return COMMENT;
         
-        if (buffer_to_check[index] == '#') ret_val = immediate;
+        if (buffer_to_check[index] == '#') ret_val = immediate_addr;
         for(i = 0; i < 3; ++i){
             if (buffer_to_check[index + i] != ',' && buffer_to_check[index + i] != ' ') reg[i] = buffer_to_check[index + i];
             else break;
@@ -55,7 +56,7 @@ int check_mem_mode(char *buffer){
                 strcat(reg_name, str);
                 if (strcmp(reg_name, reg) == 0){
                     
-                    ret_val = direct;
+                    ret_val = direct_addr;
                     free(reg_name);
                     break;
                 }
@@ -79,7 +80,7 @@ int check_mem_mode(char *buffer){
         if (buffer_to_check[index] == '#'){
             flag = skip = 1;
             // ret_val = ret_val & 1;
-            if (ret_val != immediate) ret_val = immediate;
+            if (ret_val != immediate_addr) ret_val = immediate_addr;
         }
         for(i = 0; i < 3; ++i){
             if (buffer_to_check[index + i] != ',' && buffer_to_check[index + i] != ' ') reg[i] = buffer_to_check[index + i];
@@ -103,7 +104,7 @@ int check_mem_mode(char *buffer){
                 free(reg_name);
             }
             if (strlen(reg) != 0 && i >= 16 && !skip)  ret_val = OTHER;
-            if(strlen(reg) != 0 && flag && i < 16) if(ret_val == direct) ret_val = direct;
+            if(strlen(reg) != 0 && flag && i < 16) if(ret_val == direct_addr) ret_val = direct_addr;
         
         }
         else{
@@ -114,18 +115,20 @@ int check_mem_mode(char *buffer){
     else{
         ret_val = STOP;
     }
-    if (ret_val == 1) ret_val = direct;
+    if (ret_val == 1) ret_val = direct_addr;
     return ret_val;
 }
 
 int get_mode(char * instr){
+    int ret_val = check_line_type(instr);
     int resault = check_inst(instr);
     int regs_mode = check_mem_mode(instr);
-    if (resault != COMMENT){
-        if (regs_mode == direct){
+    if (resault != COMMENT && ret_val == OTHER){
+        ret_val = regs_mode;
+        if (regs_mode == direct_addr){
             printf("[1] Direct memory mode\n");
         }
-        else if (regs_mode == immediate){
+        else if (regs_mode == immediate_addr){
             printf("[0] Immediate memory mode\n");
         }
         else if (regs_mode == COMMA){
@@ -139,9 +142,13 @@ int get_mode(char * instr){
         }
     }
     else{
-        printf("This is a comment should ignore\n");
+        if (resault == COMMENT){
+            printf("Comment\n");
+            ret_val = COMMENT;
+        } else if (ret_val != EMPTY){
+            printf("Unknown error\n");
+        }
     }
-    printf("Comment: %i\n", resault == COMMENT);
         
     /* switch (res) {
         case CMP:
@@ -172,7 +179,7 @@ int get_mode(char * instr){
             
     }
     */
-    return 1;
+    return ret_val;
 }
 
 unsigned int instruction_to_word_A(char * instr){
@@ -201,9 +208,21 @@ void word_to_string(unsigned int n, char **str_p){
 }
 
 LINE_TYPE check_line_type(char *buffer){
-    int index = 0, ret_val = OTHER;
-    if (!buffer) return ret_val;
-    while (isspace(buffer[index])) ++index;
-    if( buffer[index] == '\n' ) ret_val = EMPTY;
-    return ret_val;
+    regex_t regex;
+    int ret;
+    const char* pattern = "^[ \t\n]*\\0?$";
+    ret = regcomp(&regex, pattern, REG_EXTENDED);
+    if (ret) {
+        regfree(&regex);
+        return -1; 
+    }
+    ret = regexec(&regex, buffer, 0, NULL, 0);
+    regfree(&regex);
+    if (!ret) {
+        return EMPTY;
+    } else if (ret == REG_NOMATCH) {
+        return OTHER;
+    } else {
+        return -1;
+    }
 }
