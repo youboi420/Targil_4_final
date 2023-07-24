@@ -140,26 +140,51 @@ int calc_delta(int arr[2]){
     return sum;
 }
 
-char * find_symbol(char * buffer){
-    int index = 0, j = 0;
+char * find_symbol(char * buffer, int *stopped){
+    int index = 0;
+    *stopped = 0;
     char * name = (char *)malloc(80);
 
     while(isspace(buffer[index])) ++index;
     if (!((buffer[index] <= 'z' && buffer[index] >= 'a' ) || (buffer[index] <= 'Z' && buffer[index] >= 'A' ))) return NULL;
     
     while(index < 80 && buffer[index]!=':' && buffer[index]){
-        name[j++] = buffer[index++];
+        name[(*stopped)++] = buffer[index++];
     }
-    name[j] = '\0';
+    name[(*stopped)] = '\0';
+    *stopped = index;
     return name;
 }
 
-int check_arrtib(char *buffer){
-    int ret_val = OTHER;
-    if (check_label_type(buffer, "^\\s(.?)(:)\\s+((\\.)entry).*$")) ret_val = ENT;
-    if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.extern).*$")) ret_val = EXT;
-    if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.data).*$")) ret_val = DATA;
-    if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.string).*$")) ret_val = STR;
+int check_arrtib(char *buffer, int start_index){
+    int ret_val = OTHER, index = start_index + 1;
+    while(isspace(buffer[index])) ++index;
+
+    if(buffer[index] != '.') ret_val = CODE;
+    else if (buffer[index] == '.'){
+        if(buffer[index+1] == 'e'){
+            /* check if ext or ent */
+            if(buffer[index+2] == 'x'){ ret_val = EXT; }
+            if(buffer[index+2] == 'n'){ ret_val = ENT; }
+        }
+        else if (buffer[index+1] == 'd'){
+            ret_val = DATA; 
+        }
+        else if (buffer[index+1] == 's'){
+            ret_val = DATA; 
+        }
+        else 
+            ret_val = OTHER; 
+    }
+    return ret_val;
+    // if(){
+
+    // }
+    
+    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+((\\.)entry).*$")) ret_val = ENT;
+    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.extern).*$")) ret_val = EXT;
+    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.data).*$")) ret_val = DATA;
+    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.string).*$")) ret_val = STR;
     printf("\nBuffer: %s\tREG: %i\n", buffer,ret_val);
     // if (ret_val == -1) ret_val = check_label(buffer);
     // if (ret_val == 1) ret_val = OTHER;
@@ -235,7 +260,7 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
     char *  find_sym;
     char * buffer = (char *)malloc(sizeof(char) * 82), c;
     int counter = 0, line = 0, res, status = 1, label_type, ret_val = PASSED, delta;
-    int func_t, mode, arr[2];
+    int func_t, mode, arr[2],stopped;
 
     *root = NULL;
     symPTR node;
@@ -250,6 +275,7 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
      *  לאחר מכן צריכים לסנן לטבלת הסמלים ולכתוב מילים שמורות בזיכרון התוכנית (כלומר לשריין) אחרי זאת לסגור את הקובץ 
     */
     while(!feof(fp) && status){
+        stopped = 0;
         node = (symPTR)malloc(sizeof(symNode));
         counter = 0;
         arr[0] = arr[1] = 0;
@@ -297,9 +323,8 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
                     case LABEL:
                         printf("LABEL Should check if usage\\definition\n");
                         /* check if it's defenition or usage of the label */
-                        label_type = check_arrtib(buffer);
                         
-                        find_sym = find_symbol(buffer);
+                        find_sym = find_symbol(buffer, &stopped);
                         if (find_sym != NULL){
                             printf("symbol found %s\n", find_sym);
                             node->symbol = find_sym;
@@ -312,6 +337,8 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
                             node->next = NULL;
                             insert_symTable(root, node);
                         } else printf("Weird Buffer = %s\n", buffer);
+                        
+                        label_type = check_arrtib(buffer, stopped);
                         switch (label_type) {
                             case EXT:
                                 printf(".Extern \n");
@@ -326,6 +353,7 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
                                 printf(".Data \n");
                                 break;
                             case CODE:
+                                printf(".Code\n");
                                 break;
                             default:
                                 printf("Unknown label %i\n", label_type);
@@ -400,7 +428,8 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
                         printf("OTHER\n");
                         
                 }
-                ++line;
+                for (int l = 0; l < delta; l++){++line;}
+                
             }
         } else{
             printf("Syntax error at line: %i\n", line);

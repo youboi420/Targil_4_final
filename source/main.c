@@ -118,8 +118,8 @@ int main(int argc, char**argv){
     symPTR* root = (symPTR*)malloc(sizeof(symNode));
     *root = NULL;
     symPTR node = (symPTR)malloc(sizeof(symNode));
-    char * find_sym = find_symbol("              T_x:         .string ");
-    int line = 1, delta = 13;
+    int line = 1, delta = 13, stop = 0;
+    char * find_sym = find_symbol("              T_x:         .string ", &stop);
 
     int i;
     if (argc == 1){

@@ -10,7 +10,12 @@ MAIN:  prn    #48
         inc m3
 .entry MAIN
     stop
+
+    
+    
 M: .data 1,2,3
 K: .string 1,2
 l: .data 1,2
 p: .data 1,2
+
+inc r2
