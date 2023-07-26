@@ -1,3 +1,4 @@
+.data 1,2
 MAIN:  prn    #48
 ; this is a comment
     mov R19, r1
@@ -8,13 +9,13 @@ MAIN:  prn    #48
         mov r1, Z
                 m2 
         inc m3
-.entry MAIN
-    stop
-
-    
-    
+        inc R55
+.entry         MAIN
+.extern ZZ
+    stop  
 M: .data 1,2,3
-K: .string 1,2
+rts
+K: .string "abcd"
 l: .data 1,2
 p: .data 1,2
 

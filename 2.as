@@ -1,16 +1,19 @@
-MAIN: add r3, LIST
-LOOP: prn #48
-    lea STR, r6
-    inc r6
-    mov r3, W
-    sub r1, r4
-    bne END
-    cmp val1, #-6
-    bne END[r15]
-    dec K
-    sub LOOP[r10],r14
-END: stop
-STR: .string “abcd”
-LIST: .data 6, -9
-K: .data 31
-.extern val1
+; handle dups
+ .data 1,2
+s: .data 1,2
+s: .data 1,2
+s: .data 1,2
+.string "abcd"
+MAIN:  prn    #48
+; this is a comment
+    macro m44
+        inc  r1
+        mov r1, Z
+    endm
+    mov R19, r1
+    lea r4, #3
+    x: lea L, r2    
+    inc r5
+    m44
+    inc r2
+.extern MAIN

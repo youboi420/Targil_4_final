@@ -11,3 +11,4 @@ void insert_extTable(extPTR* root, extPTR node);
 void insertData_extTable(extPTR node, char *sym, int baseAddress ,int offset);
 void printToFile_extTable(extPTR* root, char * file_name);
 void destroy_extTable(extPTR *root);
+void print_ext_list(extPTR *root);

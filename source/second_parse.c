@@ -8,6 +8,20 @@
 #include <string.h>
 #include <regex.h>
 
+int check_exists(char * name_to_search, symPTR * root){
+    symPTR temp = *root;
+    int ret_val = 0;
+    while(temp){
+        if(strcmp(name_to_search, temp->symbol) == 0){
+                ret_val = 1;
+                temp = NULL;
+                break;
+        }
+        temp = temp->next;
+    }
+    return ret_val;
+}
+
 int mem_mode_info(char *buffer, int *info_arr){
     if (sizeof(info_arr) != sizeof(int) * 2) return -1;
     int i = 0, ret_val = OTHER, index = 0, start, end, comma_count = 0, flag;
@@ -104,21 +118,21 @@ char * instr_rgx[] = {
 };
 
 char *intr_bin_str[] = {
- "0ARE0000000000000000",
- "0ARE0000000000000010",
- "0ARE0000000000000100",
- "0ARE0000000000001000",
- "0ARE0000000000010000",
- "0ARE0000000000100000",
- "0ARE0000000001000000",
- "0ARE0000000010000000",
- "0ARE0000000100000000",
- "0ARE0000001000000000",
-"0ARE0000010000000000",
-"0ARE0000100000000000",
-"0ARE0001000000000000",
-"0ARE0010000000000000",
-"0ARE0100000000000000",
+ "0000000000000000",
+ "0000000000000010",
+ "0000000000000100",
+ "0000000000001000",
+ "0000000000010000",
+ "0000000000100000",
+ "0000000001000000",
+ "0000000010000000",
+ "0000000100000000",
+ "0000001000000000",
+"0000010000000000",
+"0000100000000000",
+"0001000000000000",
+"0010000000000000",
+"01000100000000000000",
 "01001000000000000000"
 };
 
@@ -140,6 +154,14 @@ int calc_delta(int arr[2]){
     return sum;
 }
 
+/**
+ * @brief this function checks for symbol's/variable name inside the given buffer and inc's the given stopped cariable pointer 
+ * 
+ * @param buffer the string to look for a label's name inside
+ * @param stopped  the pointer to the stopped index
+ * @return char* 
+ */
+
 char * find_symbol(char * buffer, int *stopped){
     int index = 0;
     *stopped = 0;
@@ -157,10 +179,11 @@ char * find_symbol(char * buffer, int *stopped){
 }
 
 int check_arrtib(char *buffer, int start_index){
-    int ret_val = OTHER, index = start_index + 1;
+    int ret_val = OTHER, index = start_index;
     while(isspace(buffer[index])) ++index;
-
-    if(buffer[index] != '.') ret_val = CODE;
+    if(buffer[index] != '.'){
+        ret_val = CODE;
+    }
     else if (buffer[index] == '.'){
         if(buffer[index+1] == 'e'){
             /* check if ext or ent */
@@ -171,23 +194,13 @@ int check_arrtib(char *buffer, int start_index){
             ret_val = DATA; 
         }
         else if (buffer[index+1] == 's'){
-            ret_val = DATA; 
+            ret_val = STR; 
         }
         else 
             ret_val = OTHER; 
     }
     return ret_val;
-    // if(){
-
-    // }
-    
-    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+((\\.)entry).*$")) ret_val = ENT;
-    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.extern).*$")) ret_val = EXT;
-    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.data).*$")) ret_val = DATA;
-    // if (check_label_type(buffer, "^\\s(.?)(:)\\s+(\\.string).*$")) ret_val = STR;
     printf("\nBuffer: %s\tREG: %i\n", buffer,ret_val);
-    // if (ret_val == -1) ret_val = check_label(buffer);
-    // if (ret_val == 1) ret_val = OTHER;
     return ret_val;
 }
 
@@ -257,13 +270,11 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
     }
     
     FILE *fp = fopen(file_name, "r+");
-    char *  find_sym;
-    char * buffer = (char *)malloc(sizeof(char) * 82), c;
-    int counter = 0, line = 0, res, status = 1, label_type, ret_val = PASSED, delta;
-    int func_t, mode, arr[2],stopped;
-
+    char * buffer = (char *)malloc(sizeof(char) * 82), *copy_buffer, *  find_sym,  c, *word, sym_name[74] = {'\0'};
+    int counter = 0, line = 0, res, status = 1, label_type, ret_val = PASSED, delta = 1;
+    int func_t, mode, arr[2],stopped, R_E_type = -1, label_index = 0, turn_on, name_len, name_index, found = 0;
     *root = NULL;
-    symPTR node;
+    symPTR node, temp;
 
     if (!fp){
         printf("[/] Error opening file in parse2 stage2\n");
@@ -275,8 +286,14 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
      *  לאחר מכן צריכים לסנן לטבלת הסמלים ולכתוב מילים שמורות בזיכרון התוכנית (כלומר לשריין) אחרי זאת לסגור את הקובץ 
     */
     while(!feof(fp) && status){
+        turn_on = -1;
         stopped = 0;
+        found = 0;
+        delta = 0;
+        sym_name[0] = '\0';
         node = (symPTR)malloc(sizeof(symNode));
+        word = (char *)malloc(sizeof(char) * 21);
+        copy_buffer = (char *)malloc(sizeof(char) * 21);
         counter = 0;
         arr[0] = arr[1] = 0;
         /* reads one line in the rules of the question */
@@ -304,61 +321,152 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
             else if (mode == COMMENT){ printf("[!] This is a comment should ignore\n"); }
             else {    
                 res = check_inst(buffer);
-                if (res-101 >= 0 && res -101 <= 15){
+                
+                /* make the calculation to see if the resualt is in the range of the specfied instructions
+                *  excluding the labels, hence the (LABEL+1) if the resualt is a label well check if it's a code label or not in the second stage
+                */
+                if (res-(LABEL+1) >= 0 && res - (LABEL+1) <= 15){
                     if (mode == reg_addr || mode == direct_addr){
-                        printf("0100\t");
+                        strcpy(word, "0100");
                     }
-                    else if (mode == immediate_addr || mode == indx_addr) printf("00??\t"); 
-                    printf("MODE: %i SO WORD IS: %s", res, intr_bin_str[res-101]);
-                    printf("\n\t%s", word_to_ob_line(intr_bin_str[res-101]));
+                    else /* if (mode == immediate_addr || mode == indx_addr) */{
+                        strcpy(word, "00??");
+                    }
+                    if (res == STOP || res == RTS) strcpy(word, "");
+                    strcat(word,intr_bin_str[res-101]);
+                    
+                    printf("MODE: %i SO WORD IS: %s", res, word);
+                    printf("\n\t%s", word_to_ob_line(word));
+                    
                     mem_mode_info(buffer, arr);
                     delta = calc_delta(arr);
+                    
                     if (res != RTS && res != STOP) ++delta; /* for func_t */
                     else if(res == RTS || res == STOP) delta = 1;
-                    printf("\nARR[0] = %i\tARR[1] = %i\tDelta: %i\n", arr[0],arr[1], delta);
+                    printf("\nARR[0] = %i\tARR[1] = %i\tDelta: %i\n", arr[0], arr[1], delta);
                 }
-                // printf("Rs: %i\n", res);
-                // /* save helper word's in memory and print current word aka instruction and insert symbol if necessery */
+                /* save helper word's in memory and print current word aka instruction and insert symbol if necessery */
                 switch (res) {
                     case LABEL:
+                        for(int a_indx=0; a_indx<N;a_indx++){
+                            node->arr[a_indx] = 0;
+                        }
                         printf("LABEL Should check if usage\\definition\n");
                         /* check if it's defenition or usage of the label */
-                        
                         find_sym = find_symbol(buffer, &stopped);
-                        if (find_sym != NULL){
-                            printf("symbol found %s\n", find_sym);
-                            node->symbol = find_sym;
-                            node->baseAddress = calc_base_addr((100 + line));
-                            node->offset = (100 + line) - node->baseAddress;
-                            node->START_IC = node->value = 100 + line;
-                            node->END_IC = delta;
-                            for(int a_indx=0; a_indx<N;a_indx++)
-                                node->arr[a_indx] = 0;
-                            node->next = NULL;
-                            insert_symTable(root, node);
-                        } else printf("Weird Buffer = %s\n", buffer);
-                        
                         label_type = check_arrtib(buffer, stopped);
+                        printf("label type: %i\n> %s \n", label_type == STR,&buffer[stopped+1]);
+                        
+                        mem_mode_info(&buffer[stopped + 1], arr);                
+                        delta = calc_delta(arr);
+                        /* if the start is .ent or .ext */
+                        if (find_sym == NULL){
+                            if(buffer[stopped+1] == 'e'){
+                                /* check ext pr ent */
+                                if (buffer[stopped+2] == 'x'){
+                                    /* extern */
+                                    turn_on = 0;
+                                }
+                                else if (buffer[name_index+2] == 'n'){
+                                    /* entry */
+                                    turn_on = 1;
+                                }
+                                name_index = stopped;
+                                stopped += 7;
+                                while(isspace(buffer[stopped])) ++stopped;
+                                strcpy(sym_name, &buffer[stopped]);
+                                name_len = 0;
+                                while(!isspace(buffer[stopped])) {
+                                    ++name_index;
+                                    ++stopped;
+                                }
+                                sym_name[name_index] = '\0';
+                                stopped = name_index;
+                                
+                                temp = *root;
+                                while(temp){
+                                    if(strcmp(sym_name, temp->symbol) == 0 && (turn_on == 1 || turn_on == 0)){
+                                        printf("Turned on\n");
+                                        temp->arr[turn_on] = 1;
+                                        temp = NULL;
+                                        break;
+                                    }
+                                    temp = temp->next;
+                                }                   
+                            }
+                            if (sym_name[0] != '\0'){
+                                    printf("Name to find = |%s|\n", sym_name);
+                                    R_E_type = check_R_E(buffer, &label_index);
+                                    while(isspace(buffer[label_index])) ++label_index;
+                                    printf("[^] R:%i E:%i\tfor label: %s\n", R_E_type == ENT , R_E_type == EXT ,&buffer[label_index]);
+                                    if (R_E_type == EXT) node->arr[0] = 1;
+                                    if (R_E_type == ENT) node->arr[1] = 1;
+                            }
+                        }
+                        else if (buffer[stopped+1] == 'd' && buffer[stopped+2] == 'a' && buffer[stopped+3] == 't' && buffer[stopped+4] == 'a' && buffer[stopped+5] == ' '){ printf("Shoudld handle the given data in memory next round??\n"); }
+                        else if (buffer[stopped+1] == 's' && buffer[stopped+2] == 't' && buffer[stopped+3] == 'r' && buffer[stopped+4] == 'i' && buffer[stopped+5] == 'g' && buffer[stopped+6] == ' '){ printf("Shoudld handle the given string in memory next round??\n"); }
+                        else{
+                            printf("ARR[0] = %i\tARR[1] = %i\tDelta: %i\n", arr[0], arr[1], delta);
+                            printf("[?!] Unknown type of info\n");
+                        }
+                        ++stopped;
                         switch (label_type) {
                             case EXT:
                                 printf(".Extern \n");
+                                node->arr[0] = 1;
                                 break;
                             case ENT:
                                 printf(".Entry \n");
+                                node->arr[1] = 1;
                                 break;
                             case STR:
                                 printf(".String \n");
+                                node->arr[2] = 1;
+                                delta = 0;
+                                while((buffer[stopped]) != '"'){ 
+                                    ++stopped;
+                                }
+                                ++stopped;
+                                while((buffer[stopped]) != '"'){ 
+                                    ++delta;
+                                    ++stopped;
+                                }
+                                printf("Changed delta: %i\n", delta);
+                                (*DC) = (*DC) + delta;
                                 break;
                             case DATA:
                                 printf(".Data \n");
+                                node->arr[2] = 1;
+                                delta = 1;
+                                printf("Changed delta\n");
+                                while((buffer[stopped])){ 
+                                    if (buffer[stopped] == ',') ++delta;
+                                    ++stopped;
+                                }
+                                // delta = ?;
+                                (*DC) = (*DC) + delta;
                                 break;
                             case CODE:
                                 printf(".Code\n");
+                                node->arr[3] = 1;
                                 break;
                             default:
                                 printf("Unknown label %i\n", label_type);
                                 break;
                         }
+                        if (find_sym != NULL){
+                            printf("symbol found %s\n", find_sym);
+                            node->symbol = find_sym;
+                            node->baseAddress = calc_base_addr((100 + line));
+                            node->offset = (100 + line) - node->baseAddress;
+                            node->value = 100 + line;
+                            node->END_IC = delta;
+                            node->next = NULL;
+                            if(! check_exists(find_sym, root)){
+                                insert_symTable(root, node);
+                            } else printf("IGNORE\n");
+                        }
+                        
                         // get_label_name();
                         break;
                     case CMP:
@@ -394,10 +502,22 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
                     case DEC:
                         printf("DEC\n");
                         func_t = 13;
+                        if (arr[0] == 11){
+                            printf("0100 REG/NUMBER MODE\n");
+                        } else if (arr[0] == -1) printf("EXTERN/RELOCATABLE\n");
+                        else {
+                            printf("ARR[0] = %i\n", arr[0]);
+                        }
                         break;
                     case INC:
-                        printf("INC \n");
+                        printf("INC ?? \n");
                         func_t = 12;
+                        if (arr[0] == 11){
+                            printf("REG/NUMBER MODE\n");
+                        } else if (arr[0] == -1) printf("EXTERN/RELOCATABLE\n");
+                        else {
+                            printf("ARR[0] = %i\n", arr[0]);
+                        }
                         break;
                     case RED:
                         // something 1,2,3
@@ -428,7 +548,7 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
                         printf("OTHER\n");
                         
                 }
-                for (int l = 0; l < delta; l++){++line;}
+                for (int l = 0; l < delta /* && delta < 5 */; l++){++line;}
                 
             }
         } else{
@@ -439,16 +559,123 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root){
     }
     if (status == 0) ret_val = STOP;
     if (status == -1) ret_val = SYNTAX_EXCEPTION;
+    free(word);
     fclose(fp);
+    *IC = line;
     return ret_val;
 }
 
-int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES){
-    return 1;
+int check_R_E(char * buffer, int *label_index){
+    int index = 0, ret_val = OTHER;
+    char STR[8] = {0};
+    *label_index = 0;
+    
+    while(isspace(buffer[index])) ++index;
+    while(!isspace(buffer[index]) && *label_index < 7){
+        STR[*label_index] = buffer[index];
+        ++index;
+        ++(*label_index);
+    }
+    STR[*label_index] = '\0';
+    printf("STR: %s\n", STR);
+    if (strcmp(STR, ".entry") == 0) ret_val = ENT;
+    if (strcmp(STR, ".extern") == 0) ret_val = EXT;
+    if (strcmp(STR, ".data") == 0) ret_val = DATA;
+    if (strcmp(STR, ".string") == 0) ret_val = DATA;
+    return ret_val;
 }
 
-void read_to_symTable(symPTR node){
+/**
+ * @brief this function parses the file for the last time before outputing the requested files if the EXPORT_FILES flag is on
+ * 
+ * @param file_name 
+ * @param IC 
+ * @param DC 
+ * @param EXPORT_FILES 
+ * @return int 
+ */
+int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, symPTR * root){
+    symPTR curr = *root;
+    entPTR * ent_root = (entPTR *)malloc(sizeof(entNode));
+    extPTR * ext_root = (extPTR *)malloc(sizeof(entNode));
+    entPTR ent_node =(entPTR)malloc(sizeof(entNode));
+    extPTR ext_node =(extPTR)malloc(sizeof(entNode));
+    char *buffer, c;
+    int symbole_type, i, arr[2], counter, instr_flag , comma , opp1 , opp2;
+
+    FILE *fp = fopen(file_name, "r+");
+
+    if (!fp){
+        printf("[/] Error opening file in parse2 stage2\n");
+        exit(1);
+    }
     
+    /* initilize the root's */
+    *ent_root = NULL;
+    *ext_root = NULL;
+
+    while( curr ){
+        /* check's only ext and ent */
+        symbole_type = OTHER;
+        if (curr->arr[0] == 1) symbole_type = EXT;
+        if (curr->arr[1] == 1) symbole_type = ENT;
+        switch (symbole_type) {
+            case EXT:
+                ext_node = create_extTable_node();
+                ext_node->symbol = curr->symbol;
+                ext_node->baseAddress = (curr->value) - 1;
+                ext_node->offset = (curr->value);
+                insert_extTable(ext_root, ext_node);
+                break;
+            case ENT:
+                ent_node = create_entTable_node();
+                ent_node->symbol = curr->symbol;
+                ent_node->baseAddress = curr->baseAddress;
+                ent_node->offset = curr->offset;
+                insert_entTable(ent_root, ent_node);
+                break;
+            default:
+                break;
+        }
+        curr = curr->next;
+    }
+
+
+    while(!feof(fp)){
+        // mov R, r1
+        // 0ARE
+        // 0010
+        // dec r4
+
+        // stop rts prn inc 
+        
+        //      inc r1
+        //      mov
+        //      stop
+        
+        // counter = instr_flag = comma = opp1 = opp2 = 0;
+        // buffer = (char *)malloc(sizeof(char) * 80);
+        // while(counter < 80 && (c = getc(fp)) != '\n'){
+        //     if (c != EOF){
+        //         buffer[counter] = c;
+        //         if(c != ' '){
+        //             if(instr_flag != 3)
+        //                 ++instr_flag;
+        //         }
+        //     }
+        //     else{
+        //         buffer[counter] = '\0';
+        //     }
+        //     ++counter;
+        // }
+        // buffer[counter] = '\0';
+        // /* check if the line is valid or not */
+        // free(buffer);
+    }
+    // mem_mode_info(buffer, arr);
+    // delta = calc_delta(arr);
+    
+    return 1;
 }
 
 int update_symbole(symPTR *manager, int ic, void * new_data, int data_type){

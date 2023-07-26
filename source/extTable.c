@@ -41,6 +41,7 @@ void printToFile_extTable(extPTR* root,char * file_name){
     char str[10];
     extPTR temp = *root;
     FILE *fp;
+    strcpy(nName, file_name);
     strcat(nName, ".ext");
     fp = fopen(nName, "w+");
 
@@ -57,8 +58,36 @@ void printToFile_extTable(extPTR* root,char * file_name){
         strcat(buffer, " ");
         strcat(buffer, "OFFSET ");
         sprintf(str, "%d", temp->offset);
+        strcat(buffer, str);
         strcat(buffer, "\n");
         fputs(buffer, fp);
+        temp = temp->next;
+        free(buffer);
+    }
+    fclose(fp);
+}
+
+void print_ext_list(extPTR* root){
+    char * buffer;
+    char str[10];
+    extPTR temp = *root;
+    
+    while(temp){
+        buffer = (char *)malloc(sizeof(char) * 128 * 2);        
+        strcpy(buffer, temp->symbol);
+        strcat(buffer, " ");
+        strcat(buffer, "BASE ");
+        sprintf(str, "%d", temp->baseAddress);
+        strcat(buffer, str);
+        strcat(buffer, "\n");
+
+        strcat(buffer, temp->symbol);
+        strcat(buffer, " ");
+        strcat(buffer, "OFFSET ");
+        sprintf(str, "%d", temp->offset);
+        strcat(buffer, str);
+        strcat(buffer, "\n");
+        printf("[ext]\n%s\n", buffer);
         temp = temp->next;
         free(buffer);
     }

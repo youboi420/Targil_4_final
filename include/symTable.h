@@ -39,5 +39,5 @@ void insert_symTable(symPTR* root, symPTR node);
 void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int START_IC, int END_IC);
 void printToFile_symTable(symPTR* root);
 void destroy_symTable(symPTR *root);
-
+void print_sym_list(symPTR *root);
 #endif //TARGIL_4_SYMTABLE_H

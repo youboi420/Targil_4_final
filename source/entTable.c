@@ -35,6 +35,7 @@ void printToFile_entTable(entPTR* root, char * file_name){
     char str[10];
     entPTR temp = *root;
     FILE *fp;
+    strcpy(nName, file_name);
     strcat(nName, ".ent");
     fp = fopen(nName, "w+");
 
@@ -45,11 +46,34 @@ void printToFile_entTable(entPTR* root, char * file_name){
         sprintf(str, "%d", temp->baseAddress);
         strcat(buffer, str);
         strcat(buffer, ",");
-        sprintf(str, "%d", (temp->offset - temp->baseAddress)); /* needs to be like MAIN,96,4  for example the main label which came first is the first addres in memory*/
+        sprintf(str, "%d", (temp->offset)); /* needs to be like MAIN,96,4  for example the main label which came first is the first addres in memory*/
+        strcat(buffer, str);
         strcat(buffer, "\n");
         fputs(buffer, fp);
         temp = temp->next;
         free(buffer);
+    }
+    fclose(fp);
+}
+
+void print_ent_list(entPTR* root){
+    char * buffer;
+    char str[10];
+    entPTR temp = *root;
+
+    while(temp){
+        buffer = (char *)malloc(sizeof(char) * 128 * 2);        
+        strcpy(buffer, temp->symbol);
+        strcat(buffer, ",");
+        sprintf(str, "%d", temp->baseAddress);
+        strcat(buffer, str);
+        strcat(buffer, ",");
+        sprintf(str, "%d", (temp->offset)); /* needs to be like MAIN,96,4  for example the main label which came first is the first addres in memory*/
+        strcat(buffer, str);
+        strcat(buffer, "\n");
+        printf("[ent]\n%s\n", buffer);
+        free(buffer);
+        temp = temp->next;
     }
 }
 

@@ -27,6 +27,46 @@ void insert_symTable(symPTR* root, symPTR node){
     }
 }
 
+void print_sym_list(symPTR *root){
+    char* buffer;
+    char str[10];
+    int index = 0;
+    int i;
+    symPTR temp = *root;
+    while(temp){
+        buffer = malloc(sizeof(char)*512);
+        strcpy(buffer,"Symbol: ");
+        strcat(buffer, temp->symbol);
+        strcat(buffer, " value: ");
+        sprintf(str, "%d", temp->value);
+        strcat(buffer, str);
+        strcat(buffer, " Base_Addres: ");
+        sprintf(str, "%d", temp->baseAddress);
+        strcat(buffer, " ");
+        strcat(buffer, str);
+        strcat(buffer, " Offset: ");
+        sprintf(str, "%d", temp->offset);
+        strcat(buffer, str);
+        strcat(buffer, "\t");
+        for(i=0;i<N; i++){
+            // printf("ARR[%i] = %i\n", i, temp->arr[i]);
+            if(temp->arr[i] == 1){
+                if(i == 0) strcat(buffer, "external, ");
+                if (i == 1) strcat(buffer, "entry, ");
+                if (i == 2) strcat(buffer, "data, ");
+                if (i == 3) strcat(buffer, "code, ");
+            }
+        }
+        
+        sprintf(str, "%d", temp->END_IC);
+        strcat(buffer, "\tLEN:  ");
+        strcat(buffer, str); 
+        strcat(buffer, "\n");
+        printf("%s\n", buffer);
+        temp = temp->next;//NULL;
+    }
+}
+
 void update_sym_addr(symPTR node, int baseAddress ,int offset){
     node->baseAddress = baseAddress;
     node->offset = offset;
