@@ -33,6 +33,10 @@ void print_sym_list(symPTR *root){
     int index = 0;
     int i;
     symPTR temp = *root;
+    if (!temp){
+        printf("LIST IS EMPTY\n");
+        return;
+    }
     while(temp){
         buffer = malloc(sizeof(char)*512);
         strcpy(buffer,"Symbol: ");

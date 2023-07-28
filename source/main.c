@@ -13,6 +13,8 @@ bool assembler(char * file_name){
     bool ret_val = true;
     char macro_parsed[strlen(file_name) + 4]; 
     symPTR * root = (symPTR*)malloc(sizeof(symNode));
+    mem_mode_node **mmn_root =  (mem_mode_node**)malloc(sizeof(mem_mode_node));
+
     IC = DC = 0;
     /* ------------ get macro parsed name ------------ */
     strcpy(macro_parsed, file_name);
@@ -37,27 +39,41 @@ bool assembler(char * file_name){
         }
     }
 
+
     if (ret_val){    
         printf("---------STARTED STAGE 2 PARSE 1---------------\n");
-        res = parse2_file_stage_1(macro_parsed, &IC, &DC, root);
+        res = parse2_file_stage_1(macro_parsed, &IC, &DC, root, mmn_root);
         printf("---------ENDED STAGE 2 PARSE 1 STOPPED: %i | PASSED: %i---------------\n\n", res == STOP, res == PASSED);
-        print_sym_list(root);
         printf("IC: %i | DC: %i", IC,DC);
-    }    
-    if(EXPORT_FILES){
-        printf("---------STARTED STAGE 2 PARSE 2---------------\n");
-        res = parse2_file_stage_2(macro_parsed, &IC, &DC, EXPORT_FILES, root);
-        printf("---------ENDED STAGE 2 PARSE 2 STOPPED: %i | PASSED: %i---------------\n\n", res == STOP, res == PASSED);
     }
-    printf("------------------------\n\n");
+
+    if (res != PASSED){
+        switch (res) {
+            case FILE_EXCEPTION:
+            case SYNTAX_EXCEPTION:
+            default:
+                EXPORT_FILES = 0;
+                break;
+        }
+    } 
+
+    if(EXPORT_FILES){
+        printf("\n---------STARTED STAGE 2 PARSE 2---------------\n");
+        res = parse2_file_stage_2(macro_parsed, &IC, &DC, EXPORT_FILES, root);
+        printf("\n---------ENDED STAGE 2 PARSE 2 STOPPED: %i | PASSED: %i---------------\n\n", res == STOP, res == PASSED);
+    }
+    
+
+    printf("\n---------- SYM TABLE -----------\n");
     print_sym_list(root);
-    printf("------------------------\n\n");
+    printf("-------- END SYM TABLE --------\n");
+    print_mmn_list(mmn_root);
     destroy_symTable(root);
     return ret_val;
 }
 
 int main(int argc, char**argv){
-    /* int i;
+    int i;
     if (argc == 1){
         printf("Not enough args\n");
         exit(EXIT_FAILURE);
@@ -65,5 +81,5 @@ int main(int argc, char**argv){
     for (i = 1; i < argc; ++i) {
         assembler(argv[i]);
     }
-    return EXIT_SUCCESS; */
+    return EXIT_SUCCESS;
 }

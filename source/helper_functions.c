@@ -11,20 +11,6 @@ int trim(char * str_to_cut){
     return i;
 }
 
-    /*  
-        add something1, something2
-        ^[\s\t]*[rts][\s\t]*$
-                    rts                       
-        ^[\s\t]*[stop][\s\t]*$
-
-        add r3, r5
-            0111 | 0000 | 0101 | 1011 | 0001            
-            0100 | 0100 | 0001 | 1011 | 0001
-            0100 | 0000 | 0111 | 1011 | 0001
-        - Example -
-        0100 | 0000 | 0101 | 1011 | 0001
-        A4   -  B0   - C3   - Dc   - E1 
-    */
 char * word_to_ob_line(char * word){
     char * ob_line = (char *)malloc(sizeof(char) * LINE);
     int i = 0, j = i, sum = 0x0, buffer_index = 0, local_i = 0;
@@ -68,11 +54,13 @@ bool check_regs(char *buffer, int *index){
         ++(*index);
         ret_val = true;
     }
-    if ((buffer[0] == '1') && (buffer[1] >= '0' || buffer[1] <= '5') && (buffer[2] == ' ' || buffer[2] == ',' || buffer[2] == '\0' || buffer[2] == '\n')){
-        /* reg is r10 -> r15 */
-        ++(*index);
-        ++(*index);
-        ret_val = true;
+    if (buffer[1]){    
+        if ((buffer[0] == '1') && (buffer[1] >= '0' || buffer[1] <= '5') && (buffer[2] == ' ' || buffer[2] == ',' || buffer[2] == '\0' || buffer[2] == '\n')){
+            /* reg is r10 -> r15 */
+            ++(*index);
+            ++(*index);
+            ret_val = true;
+        }
     }
     return ret_val;
 }
