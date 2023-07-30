@@ -3,6 +3,7 @@
 #include "extTable.h"
 #include "symTable.h"
 
+#define NUMPATT 25
 typedef enum OPP_TYPE {type_reg = 200, type_num, type_ext, type_ent} OPP_TYPE;
 typedef enum ARE_MODES{NONE = -100, A_flag = 1001, R_flag, E_flag} ARE_MODES;
 typedef struct mem_mode_node{

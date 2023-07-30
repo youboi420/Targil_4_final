@@ -1,4 +1,4 @@
-MAIN:  prn    #48
+MAIN:  prn    #4
 cmp M, #1
 cmp #1, #2
 cmp r12, r2

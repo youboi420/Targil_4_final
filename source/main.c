@@ -49,8 +49,8 @@ bool assembler(char * file_name){
 
     if (res != PASSED){
         switch (res) {
-            case FILE_EXCEPTION:
             case SYNTAX_EXCEPTION:
+            case FILE_EXCEPTION:
             default:
                 EXPORT_FILES = 0;
                 break;

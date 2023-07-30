@@ -5,7 +5,6 @@
 #include <regex.h>
 #include <string.h>
 
-
 /**
  * @brief check if there is any assembly instructions in the given buffer
  * 

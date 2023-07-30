@@ -99,6 +99,107 @@ int get_are_mode(int *arr){
     return res;
 }
 
+int trimNotSpace(char * str_to_cut){
+    int len = strlen(str_to_cut), i = 0;
+    while(i < len && !isspace(str_to_cut[i])) ++i;
+    return i;
+}
+
+void wrongString(char *input_string){
+    regex_t regex;
+    int index;
+    char *curr = input_string;
+    bool ret;
+    char *oneOp = ".*,.*";
+    char *ThreeOp = ".*,.*,.*";
+    char *label = ".*[A-Za-z_][A-Za-z0-9_]*:.*";// check if there's label
+    char *namePatt = ".*((stop)|(rts)|(clr)|(not)|(inc)|(dec)|(red)|(jmp)|(bne)|(jsr)|(prn)|(lea)|(sub)|(add)|(mov)|(cmp)|(macro)|(endm)|[.](data)|[.](string)|[.](extern)|[.](entry)).*";
+    char *commaOneOp = ".*((stop)|(rts)|(clr)|(not)|(inc)|(dec)|(red)|(jmp)|(bne)|(jsr)|(prn)).*";
+
+
+    ret = regcomp(&regex, label, REG_EXTENDED | REG_ICASE);
+    if (ret) {
+        fprintf(stderr, "Could not compile regex\n");
+        return;
+    }
+    ret = regexec(&regex, curr, 0, NULL, 0);
+    if(ret==0) {
+        index = trim(curr);
+        curr+=index;
+        index = trimNotSpace(curr);
+        curr+=index;
+        index = trim(curr);
+        curr+=index;
+    }
+    regfree(&regex);
+
+    ret = regcomp(&regex, namePatt, REG_EXTENDED | REG_ICASE);
+    if (ret) {
+        fprintf(stderr, "Could not compile regex\n");
+        return;
+    }
+    ret = regexec(&regex, curr, 0, NULL, 0);
+    if(ret==1) {
+        printf("invalid command\n");
+        return;
+    }
+    regfree(&regex);
+
+    ret = regcomp(&regex, commaOneOp, REG_EXTENDED | REG_ICASE);
+    if (ret) {
+
+        fprintf(stderr, "Could not compile regex\n");
+        return;
+    }
+    ret = regexec(&regex, curr, 0, NULL, 0);
+    index = trim(curr);
+    curr+=index;
+    index = trimNotSpace(curr);
+    curr+=index;
+    index = trim(curr);
+    curr+=index;
+    if(ret==0) { //if 0/1 operand
+        regfree(&regex);
+        ret = regcomp(&regex, oneOp, REG_EXTENDED | REG_ICASE);
+        if (ret) {
+            fprintf(stderr, "Could not compile regex\n");
+            return;
+        }
+        ret = regexec(&regex, curr, 0, NULL, 0);
+        if(ret==0) {
+            printf("too much operands\n");
+            regfree(&regex);
+            return;
+        }
+    }
+    else //if 2 operand
+    {
+        regfree(&regex);
+        ret = regcomp(&regex, ThreeOp, REG_EXTENDED | REG_ICASE);
+        if (ret) {
+            fprintf(stderr, "Could not compile regex\n");
+            return;
+        }
+        ret = regexec(&regex, curr, 0, NULL, 0);
+        if(ret==0) {
+            printf("too much operands\n");
+            regfree(&regex);
+            return;
+        }
+        ret = regcomp(&regex, oneOp, REG_EXTENDED | REG_ICASE);
+        if (ret) {
+            fprintf(stderr, "Could not compile regex\n");
+            return;
+        }
+        ret = regexec(&regex, curr, 0, NULL, 0);
+        if(ret==0) {
+            printf("less operands\n");
+            regfree(&regex);
+            return;
+        }
+    }
+}
+
 void handle_number(FILE *ob_file, char *number_str, int *mem_addr){
     char *bin_word = (char *)malloc(sizeof(char) * 21);
     if (!bin_word){
@@ -289,10 +390,91 @@ void get_num_str(int mode, int recover_index, char *buffer, char *number_str){
     }
 }
 
-int valid_line(char * buffer){
+
+
+int valid_line(char * input_string){
     int ret_val = 1;
-    
-    return ret_val;
+    regex_t regex;
+    bool ret;
+
+    char *pattStop = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(stop)\\s*$";
+    char *pattRts = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(rts)\\s*$";
+    ///1,2,3
+    char *pattClr = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(clr)\\s*(([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)|r([1-9]|1[0-5]))\\s*$";
+    char *pattNot = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(not)\\s*(([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)|r([1-9]|1[0-5]))\\s*$";
+    char *pattInc = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(inc)\\s*(([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)|r([1-9]|1[0-5]))\\s*$";
+    char *pattDec = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(dec)\\s*(([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)|r([1-9]|1[0-5]))\\s*$";
+    char *pattRed = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(red)\\s*(([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)|r([1-9]|1[0-5]))\\s*$";
+    ///1,2
+    char *pattJmp = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(jmp)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)))\\s*$";
+    char *pattBne = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(bne)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)))\\s*$";
+    char *pattJsr = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(jsr)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)))\\s*$";
+    ////0,1,2,3
+    char *pattPrn = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(prn)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|r([1-9]|1[0-5])|(#-?[1-8]|#[0-7]?))\\s*$";
+    ////form now on its with 2 operands:
+    char *pattLea = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(lea)\\s*(([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))\\s*[,]\\s*(([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*)|(r([1-9]|1[0-5])))\\s*$";
+    char *pattSub = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(sub)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5]))|(#-?[1-8]|#[0-7]?))\\s*,\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5])))\\s*$";
+    char *pattAdd = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(add)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5]))|(#-?[1-8]|#[0-7]?))\\s*,\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5])))\\s*$";
+    char *pattMov = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(mov)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5]))|(#-?[1-8]|#[0-7]?))\\s*,\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5])))\\s*$";
+    char *pattCmp = "^\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*(cmp)\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5]))|(#-?[1-8]|#[0-7]?))\\s*,\\s*((([A-Za-z_][A-Za-z0-9_]+\\[r([1-9]|1[0-5])\\])|([A-Za-z_][A-Za-z0-9_]*))|(r([1-9]|1[0-5]))|(#-?[1-8]|#[0-7]?))\\s*$";
+    ///commant
+    char *pattCmt ="^\\s*[;].*$";
+    char *pattMac = "^\\s*(macro)\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*$";
+    char *pattEndMac = "^\\s*(endm)\\s*$";
+
+    ///Instraction
+    char *pattExt = "^\\s*[.](extern)\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*$";
+    char *pattEnt = "^\\s*[.](entry)\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*$";
+    char *pattData ="\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*[.](data)\\s*(-?[0-9]+)(\\s*,\\s*-?[0-9]+)*\\s*$";
+    char *pattString = "\\s*(([A-Za-z_][A-Za-z0-9_]+[:])|([A-Za-z_][:]))?\\s*[.](string)\\s*[\"“](.*)[\"”]\\s*$";
+    char *pattEmpty = "^[\\s?\\n]$";
+    // Array of regex input_string patterns
+    char *patterns[] = {pattStop, pattRts, pattClr, pattNot, pattInc, pattInc, pattDec, pattRed, pattJmp, pattBne,
+                        pattJsr, pattPrn, pattLea, pattSub, pattAdd, pattMov, pattCmp, pattCmt,pattMac,
+                        pattEndMac,pattExt,pattEnt,pattData,pattString, pattEmpty};
+    /* does not run propely check asap */
+    return 1;
+    for (int i = 0; i < NUMPATT; i++) {
+        ret = regcomp(&regex, patterns[i], REG_EXTENDED | REG_ICASE);
+        if (ret) {
+            fprintf(stderr, "Could not compile regex\n");
+            return false;
+        }
+        ret = regexec(&regex, input_string, 0, NULL, 0);
+        if(ret==0 && (patterns[i]==pattJmp || patterns[i]==pattBne || patterns[i]==pattJsr)){
+            char *pattClr2 = ".*r(1[0-5]|[1-9])\\s*$";
+            ret = regcomp(&regex, pattClr2, REG_EXTENDED);
+            if (ret) {
+                fprintf(stderr, "Could not compile regex\n");
+                return 0;
+            }
+            ret = regexec(&regex, input_string, 0, NULL, 0);
+            if (ret == 1){
+                ret = 0;
+            }
+            else
+                ret = 1;
+        }
+        else if(patterns[i]==pattLea && ret == 0){
+            char *pattClr2 = ".*r(1[0-5]|[1-9])\\s*[,].*$";
+            ret = regcomp(&regex, pattClr2, REG_EXTENDED);
+            if (ret) {
+                fprintf(stderr, "Could not compile regex\n");
+                return 0;
+            }
+            ret = regexec(&regex, input_string, 0, NULL, 0);
+            if (ret == 1){
+                ret = 0;
+            }
+            else
+                ret = 1;
+        }
+        regfree(&regex);
+        if (ret == 0) {
+            return true; // Return 1 to indicate a match
+        }
+    }
+    return 0; // Return 0 if no match is found
 }
 
 /**
@@ -600,6 +782,7 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root, mem_m
                 for (l = 0; l < delta /* && delta < 5 */; l++){++mem_line;}
             }
         } else{
+            wrongString(buffer);
             printf("Syntax error at line: %i\n", curr_line);
             status = -1;
         }
@@ -1272,7 +1455,7 @@ void handle_label(FILE *ob_file, symPTR *root, char *label, int * mem_addr){
 
 void handle_one_opp(char * buffer, int func_t , int *mem_addr,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, FILE *ob_fp, symPTR *root){
     int local_index = 0;
-    char *bin_word = (char *)malloc(sizeof(char) * 21), *str_opp1, *str_opp2;
+    char *bin_word = (char *)malloc(sizeof(char) * 21);
 
     if (opp1 == direct_addr){
         strcpy(bin_word, "0100");
@@ -1350,7 +1533,7 @@ void handle_one_opp(char * buffer, int func_t , int *mem_addr,int recover_index,
  */
 void handle_two_opps(char * buffer, int func_t, int *mem_addr,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, int opp2, FILE *ob_fp, symPTR *root){
     int local_index = 0;
-    char *bin_word = (char *)malloc(sizeof(char) * 21), *str_opp1, *str_opp2;
+    char *bin_word = (char *)malloc(sizeof(char) * 21);
     while(isspace(buffer[recover_index])) ++recover_index;
 
     if (opp1 == direct_addr && opp2 == direct_addr){
