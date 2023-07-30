@@ -114,7 +114,7 @@ void handle_number(FILE *ob_file, char *number_str, int *mem_addr){
         strcat(bin_word, "110000");
     }
 
-    fprintf(ob_file, "[%i] ", (*mem_addr)++);
+    fprintf(ob_file, "[%4i] ", (*mem_addr)++);
     fputs(word_to_ob_line(bin_word), ob_file);
     fputs("\n", ob_file);
 
@@ -132,7 +132,7 @@ void handle_register(FILE *ob_file, char *reg_str, int *mem_addr){
     strcat(bin_word, reg_str);
     strcat(bin_word, "110000");
 
-    fprintf(ob_file, "[%i] ", (*mem_addr)++);
+    fprintf(ob_file, "[%4i] ", (*mem_addr)++);
     fputs(word_to_ob_line(bin_word), ob_file);
     fputs("\n", ob_file);
 
@@ -636,7 +636,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     char *file_name_ob = (char *)malloc(strlen(file_name) + 4), *label_name = (char *)malloc(sizeof(char) * 76);
     char *bin_word, *number_str = (char *)malloc(sizeof(char) * 10), *reg_str = (char *)malloc(sizeof(char) * 10);
     int symbole_type, arr[2] = {0, 0}, opp1 , opp2, line, index, type_dot; /* current_number is for .data */
-    int is_instr, recover_index, func_t, mem_addr = 100;
+    int is_instr, recover_index, func_t, mem_addr = 100, write_flag = 1;
     mem_mode_node *mmn_node;
     
     strcpy(file_name_copy_no_delim, file_name);
@@ -701,8 +701,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
 
     strcpy(helper_name, file_name_copy_no_delim);
     strcat(helper_name, ".help");
-    helper_fp = fopen(helper_name, "w");
-    fprintf(ob_fp, "IC: %i\tDC: %i\n", *IC, *DC);
+    helper_fp = fopen(helper_name, "w+");
     line = 101;
     buffer = (char *)malloc(sizeof(char) * 81);
     while(!feof(main_fp)){
@@ -725,7 +724,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                     index += 3; /* after the instr exluding stop */
                     if (is_instr != STOP || is_instr != RTS){
                         strcat(bin_word, intr_bin_str[is_instr - MOV]);
-                        fprintf(ob_fp, "[%i] ", mem_addr++);
+                        fprintf(ob_fp, "[%4i] ", mem_addr++);
                         fputs(word_to_ob_line(bin_word), ob_fp);
                         fputs("\n", ob_fp);        
                     }
@@ -740,7 +739,8 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                                 opp1 = mmn_node->opp_mode[0];
                                 opp2 = mmn_node->opp_mode[1];
                                 /* void handle_two_opps(char * buffer, int func_t, int *mem_addr,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, int opp2, FILE *ob_fp, symPTR *root) */
-                                handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
+                                if (write_flag)
+                                    handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
                                 break;
                             case MOV:  /* 2 */
                                 recover_index = index;
@@ -751,7 +751,8 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                                 }
                                 opp1 = mmn_node->opp_mode[0];
                                 opp2 = mmn_node->opp_mode[1];
-                                                                handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
+                                if (write_flag)
+                                    handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
 
                                 break;
                             /* when copying func_t binary don't forget to - 10 for the correct index in the string array */
@@ -765,7 +766,8 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                                 }
                                 opp1 = mmn_node->opp_mode[0];
                                 opp2 = mmn_node->opp_mode[1];
-                                handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
+                                if (write_flag)
+                                    handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
 
                                 break;
                             case SUB:  /* 2 */
@@ -778,7 +780,8 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                                 }
                                 opp1 = mmn_node->opp_mode[0];
                                 opp2 = mmn_node->opp_mode[1];
-                                handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
+                                if (write_flag)
+                                    handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
 
                                 break;
                             case LEA:  /* 2 */
@@ -790,45 +793,68 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                                 }
                                 opp1 = mmn_node->opp_mode[0];
                                 opp2 = mmn_node->opp_mode[1];
-                                handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
+                                if (write_flag)
+                                    handle_two_opps(buffer, func_t, &mem_addr,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
                                 break;
                             case PRN:  /* 1 */
-                                handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
+                                if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case CLR:  /* 1 */
                                 func_t = 10;
+                                if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case NOT:  /* 1 */
                                 func_t = 11;
+                                if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case DEC:  /* 1 */
                                 func_t = 13;
+                                if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case INC:  /* 1 */
+                            if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 func_t = 12;
                                 break;
                             case RED:  /* 1 */
+                            if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case JMP:  /* 1 */
                                 func_t = 10;
+                            if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case BNE:  /* 1 */
                                 func_t = 11;
+                            if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case JSR:  /* 1 */
                                 func_t = 12;
+                            if (write_flag)
+                                    handle_one_opp(buffer, func_t , &mem_addr, recover_index, number_str, reg_str, label_name, opp1, ob_fp, root);
                                 break;
                             case RTS:  /* 0 */
                                 strcpy(bin_word, intr_bin_str[14]);
-                                fprintf(ob_fp, "[%i] ", mem_addr++);
-                                fputs(word_to_ob_line(bin_word), ob_fp);
-                                fputs("\n", ob_fp);
+                                if (write_flag) {
+                                    fprintf(ob_fp, "[%4i] ", mem_addr++);
+                                    fputs(word_to_ob_line(bin_word), ob_fp);
+                                    fputs("\n", ob_fp);
+                                }
                                 break;
                             case STOP:  /* 0 */
                                 strcpy(bin_word, intr_bin_str[15]);
-                                fprintf(ob_fp, "[%i] ", mem_addr++);
-                                fputs(word_to_ob_line(bin_word), ob_fp);
-                                fputs("\n", ob_fp);
+                                if (write_flag) {
+                                    fprintf(ob_fp, "[%4i] ", mem_addr++);
+                                    fputs(word_to_ob_line(bin_word), ob_fp);
+                                    fputs("\n", ob_fp);
+                                }
+                                write_flag = 0;
                                 break;
                             default:
                                 printf("UNKNOWN\n");
@@ -843,13 +869,31 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                 }
         }
         
-        printf("[LINE: %i] %s\n--------------------\n", line, buffer);         
+        /* printf("[LINE: %i] %s\n--------------------\n", line, buffer); */         
         ++line;
         buffer[0] = '\0';
         /* check if the line is valid or not */
     }
-    /* // mem_mode_info(buffer, arr);
-    // delta = calc_delta(arr); */
+
+    fclose(helper_fp);
+    free(buffer);
+    
+    helper_fp = fopen(helper_name, "r");
+    if (!helper_fp){
+        printf("[/] Error opening file in parse2 stage2\n");
+        exit(1);
+    }
+    
+    buffer = (char *)malloc(80);
+    
+    while(!feof(helper_fp)){
+        ++(*DC);
+        fgets(buffer, 80, helper_fp);
+        fprintf(ob_fp, "[%4i] %s", mem_addr++, buffer);
+    }
+
+    fprintf(ob_fp, "IC: %i\tDC: %i\n", *IC, *DC);
+
     fclose(ob_fp);
     fclose(main_fp);
     fclose(helper_fp);
@@ -858,7 +902,6 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     free(file_name_copy_no_delim);
     free(file_name_ob);
     free(buffer);
-
     return 1;
 }
 
@@ -1201,8 +1244,8 @@ void handle_label(FILE *ob_file, symPTR *root, char *label, int * mem_addr){
     
     if (work->arr[0] == 1){
         /* external */
-        fprintf(ob_file,"[%i] A1-B0-C0-D0-E0\n", (*mem_addr)++);
-        fprintf(ob_file,"[%i] A1-B0-C0-D0-E0\n", (*mem_addr)++);
+        fprintf(ob_file,"[%4i] A1-B0-C0-D0-E0\n", (*mem_addr)++);
+        fprintf(ob_file,"[%4i] A1-B0-C0-D0-E0\n", (*mem_addr)++);
         return;
     }
 
@@ -1211,7 +1254,7 @@ void handle_label(FILE *ob_file, symPTR *root, char *label, int * mem_addr){
         strcpy(help_word, "0010");
         strcat(help_word, num_to_bin_str(work->baseAddress));
         /* printf("HELP WORD 1 = [%s]\n", word_to_ob_line(help_word)); */
-        fprintf(ob_file,"[%i] ", (*mem_addr)++);
+        fprintf(ob_file,"[%4i] ", (*mem_addr)++);
         fputs(word_to_ob_line(help_word), ob_file);
         fputs("\n", ob_file);
 
@@ -1219,7 +1262,7 @@ void handle_label(FILE *ob_file, symPTR *root, char *label, int * mem_addr){
         strcpy(help_word, "0010");
         strcat(help_word, num_to_bin_str(work->offset));
         /* printf("HELP WORD 2 = [%s]\n", word_to_ob_line(help_word)); */
-        fprintf(ob_file,"[%i] ", (*mem_addr)++);
+        fprintf(ob_file,"[%4i] ", (*mem_addr)++);
         fputs(word_to_ob_line(help_word), ob_file);
         fputs("\n", ob_file);
 
@@ -1249,7 +1292,7 @@ void handle_one_opp(char * buffer, int func_t , int *mem_addr,int recover_index,
         printf("[%s]\n", (bin_word));
         printf("[%s]\n", word_to_ob_line(bin_word));
         
-        fprintf(ob_fp, "[%i] ", (*mem_addr)++);
+        fprintf(ob_fp, "[%4i] ", (*mem_addr)++);
         fputs(word_to_ob_line(bin_word), ob_fp);
         fputs("\n", ob_fp);
         return;
@@ -1330,7 +1373,7 @@ void handle_two_opps(char * buffer, int func_t, int *mem_addr,int recover_index,
         printf("[%s]\n", (bin_word));
         printf("[%s]\n", word_to_ob_line(bin_word));
         
-        fprintf(ob_fp, "[%i] ", (*mem_addr)++);
+        fprintf(ob_fp, "[%4i] ", (*mem_addr)++);
         fputs(word_to_ob_line(bin_word), ob_fp);
         fputs("\n", ob_fp);
         return;
