@@ -134,6 +134,10 @@ int macro_proccess(char *file_name){
     ENTRY ent, *p_ent;
      /* ------------ get macro parsed name ------------ */
     char macro_file_name[80 + 4]; 
+    if (!macro_content){
+        printf("[!] macro content failed\n");
+        exit(1);
+    }
     strcpy(macro_file_name, file_name);
     strcat(macro_file_name, ".as");
     fp = fopen(macro_file_name, "r+");
@@ -143,7 +147,6 @@ int macro_proccess(char *file_name){
     strcat(parsed_filename, ".am");
     w_file = fopen(parsed_filename, "w+");
 
-    
     if (!fp || !w_file){
         printf("[!] File not opened...\n FP: %p\tW_FILE: %p", (void*)fp, (void*)w_file);
         return FILE_EXCEPTION;

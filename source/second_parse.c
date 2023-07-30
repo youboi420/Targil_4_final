@@ -99,6 +99,40 @@ int get_are_mode(int *arr){
     return res;
 }
 
+void handle_number(FILE *ob_file, char *number_str){
+    char *bin_word = (char *)malloc(sizeof(char) * 21);
+    if (!bin_word){
+        printf("Error in malloc handle\n");
+        return;
+    }
+    strcpy(bin_word, "0100000000");
+    strcat(bin_word, number_str);
+    strcat(bin_word, "110000");
+    
+/*     fputs(, ob_file);
+    fputs("\n", ob_file);
+ */    
+    free(bin_word);
+}
+
+void handle_register(FILE *ob_file, char *reg_str){
+    char *bin_word = (char *)malloc(sizeof(char) * 21);
+    if (!bin_word){
+        printf("Error in malloc handle\n");
+        return;
+    }
+    
+    strcpy(bin_word, "0100000000");
+    strcat(bin_word, reg_str);
+    strcat(bin_word, "110000");
+
+    
+/*     fputs(word_to_ob_line(bin_word), ob_file);
+    fputs("\n", ob_file);
+ */    
+    free(bin_word);
+}
+
 void get_reg_str(int mode, int recover_index, char * buffer, char * reg_str){
     int local_index = 0;
     if (mode == 1){
@@ -107,6 +141,7 @@ void get_reg_str(int mode, int recover_index, char * buffer, char * reg_str){
             ++local_index;
         }
     } else if (mode == 2) {
+        
         while(buffer[recover_index + local_index + 1] != '\0' && buffer[recover_index + local_index + 1] != ' ' && buffer[recover_index + local_index + 1] != '\n'){
             reg_str[local_index] = buffer[recover_index + local_index + 1];
             ++local_index;
@@ -407,8 +442,18 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root, mem_m
                                     printf("Name to find = |%s|\n", sym_name);
                                     R_E_type = check_R_E(buffer, &label_index);
                                     while(isspace(buffer[label_index])) ++label_index;
-                                    
-                                    printf("[^] R:%i E:%i\tfor label: %s, EXISTS: %i\n", R_E_type == ENT , R_E_type == EXT ,&buffer[label_index], check_exists(find_sym, root));
+                                    if (R_E_type == EXT && !check_exists(&buffer[label_index], root)){
+                                        printf("Should create\n");
+                                        /* gives error */
+                                        /* node->symbol = &buffer[label_index];
+                                        node->baseAddress = 0;
+                                        node->offset = 0;
+                                        node->value = 0;
+                                        node->END_IC = 0;
+                                        node->next = NULL;
+                                        insert_symTable(root, node); */
+                                    }
+                                    printf("[^] R:%i E:%i\tfor label: [%s]\n", R_E_type == ENT , R_E_type == EXT ,&buffer[label_index]);
                                     if (R_E_type == EXT) node->arr[0] = 1;
                                     if (R_E_type == ENT) node->arr[1] = 1;
                             }
@@ -584,8 +629,8 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     extPTR ext_node;
     char *buffer, *file_name_copy_no_delim = (char *)malloc(strlen(file_name) + 1), *helper_name = (char *)malloc(strlen(file_name) + 1); /* current_char is for .string */
     char *file_name_ob = (char *)malloc(strlen(file_name) + 4), *label_name = (char *)malloc(sizeof(char) * 76);
-    char *bin_word, *hex_word, *number_str = (char *)malloc(sizeof(char) * 10), *reg_str = (char *)malloc(sizeof(char) * 10);
-    int symbole_type, arr[2] = {0, 0}, instr_flag , comma , opp1 , opp2, line, index, type_dot; /* current_number is for .data */
+    char *bin_word, *number_str = (char *)malloc(sizeof(char) * 10), *reg_str = (char *)malloc(sizeof(char) * 10);
+    int symbole_type, arr[2] = {0, 0}, opp1 , opp2, line, index, type_dot; /* current_number is for .data */
     int is_instr, recover_index, func_t;
     mem_mode_node *mmn_node;
     
@@ -604,6 +649,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
         printf("[/] Error opening file in parse2 stage2\n");
         exit(1);
     }
+
     ent_root = (entPTR *)malloc(sizeof(entNode));
     ext_root = (extPTR *)malloc(sizeof(entNode));
     ent_node = (entPTR)malloc(sizeof(entNode));
@@ -655,7 +701,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     line = 101;
     buffer = (char *)malloc(sizeof(char) * 81);
     while(!feof(main_fp)){
-        instr_flag = comma = opp1 = opp2 = 0;
+        opp1 = opp2 = 0;
         arr[0] = arr[1] = 0;
         func_t = 0;
         fgets(buffer, 81, main_fp);
@@ -681,7 +727,6 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                     // check_opp1()
                     // strcat -> not sure? [num/ reg / extern / entry]
                     // strcat(bin_word, to_bin(func_t)) */
-
                     bin_word = (char*)malloc(sizeof(char) * 21);
                     strcpy(bin_word, "0100");
                     index += 3; /* after the instr exluding stop */
@@ -693,7 +738,8 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                             case CMP:  /* 2 */ 
                                 recover_index = index;
                                 strcat(bin_word, intr_bin_str[CMP - MOV]);
-                                printf("FIRST WORD: %s\nFUNC_T: %i\n",  word_to_ob_line(bin_word), func_t);
+                                fputs(word_to_ob_line(bin_word), ob_fp);
+                                fputs("\n", ob_fp);
                                 mmn_node = get_node_by_location(mmn_root, line - 100);
                                 if (mmn_node == NULL) {
                                     printf("CRITICAL ERROR\n");
@@ -701,21 +747,68 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                                 }
                                 opp1 = mmn_node->opp_mode[0];
                                 opp2 = mmn_node->opp_mode[1];
-                                /* void handle_two_opps(char * buffer, int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, int opp2, FILE *ob_fp, symPTR *root) */
                                 handle_two_opps(buffer, func_t,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
                                 break;
-                            case PRN:  /* 1 */
-                                break;
                             case MOV:  /* 2 */
+                                recover_index = index;
+                                strcat(bin_word, intr_bin_str[MOV - MOV]);
+                                fputs(word_to_ob_line(bin_word), ob_fp);
+                                fputs("\n", ob_fp);
+                                mmn_node = get_node_by_location(mmn_root, line - 100);
+                                if (mmn_node == NULL) {
+                                    printf("CRITICAL ERROR\n");
+                                    exit(1);
+                                }
+                                opp1 = mmn_node->opp_mode[0];
+                                opp2 = mmn_node->opp_mode[1];
+                                handle_two_opps(buffer, func_t,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
                                 break;
                             /* when copying func_t binary don't forget to - 10 for the correct index in the string array */
                             case ADD:  /* 2 */
                                 func_t = 10;
+                                recover_index = index;
+                                strcat(bin_word, intr_bin_str[ADD - MOV]);
+                                fputs(word_to_ob_line(bin_word), ob_fp);
+                                fputs("\n", ob_fp);
+                                mmn_node = get_node_by_location(mmn_root, line - 100);
+                                if (mmn_node == NULL) {
+                                    printf("CRITICAL ERROR\n");
+                                    exit(1);
+                                }
+                                opp1 = mmn_node->opp_mode[0];
+                                opp2 = mmn_node->opp_mode[1];
+                                handle_two_opps(buffer, func_t,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
                                 break;
                             case SUB:  /* 2 */
                                 func_t = 11;
+                                recover_index = index;
+                                strcat(bin_word, intr_bin_str[SUB - MOV]);
+                                fputs(word_to_ob_line(bin_word), ob_fp);
+                                fputs("\n", ob_fp);
+                                mmn_node = get_node_by_location(mmn_root, line - 100);
+                                if (mmn_node == NULL) {
+                                    printf("CRITICAL ERROR\n");
+                                    exit(1);
+                                }
+                                opp1 = mmn_node->opp_mode[0];
+                                opp2 = mmn_node->opp_mode[1];
+                                handle_two_opps(buffer, func_t,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
                                 break;
                             case LEA:  /* 2 */
+                                recover_index = index;
+                                strcat(bin_word, intr_bin_str[LEA - MOV]);
+                                fputs(word_to_ob_line(bin_word), ob_fp);
+                                fputs("\n", ob_fp);
+                                mmn_node = get_node_by_location(mmn_root, line - 100);
+                                if (mmn_node == NULL) {
+                                    printf("CRITICAL ERROR\n");
+                                    exit(1);
+                                }
+                                opp1 = mmn_node->opp_mode[0];
+                                opp2 = mmn_node->opp_mode[1];
+                                handle_two_opps(buffer, func_t,recover_index, number_str, reg_str, label_name, opp1, opp2, ob_fp, root);
+                                break;
+                            case PRN:  /* 1 */
                                 break;
                             case CLR:  /* 1 */
                                 func_t = 10;
@@ -742,6 +835,13 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
                                 break;
                             case RTS:  /* 0 */
                                 strcpy(bin_word, intr_bin_str[14]);
+                                fputs(word_to_ob_line(bin_word), ob_fp);
+                                fputs("\n", ob_fp);
+                                break;
+                            case STOP:  /* 0 */
+                                strcpy(bin_word, intr_bin_str[15]);
+                                fputs(word_to_ob_line(bin_word), ob_fp);
+                                fputs("\n", ob_fp);
                                 break;
                             default:
                                 printf("UNKNOWN\n");
@@ -759,6 +859,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     }
     /* // mem_mode_info(buffer, arr);
     // delta = calc_delta(arr); */
+    fclose(ob_fp);
     fclose(main_fp);
     fclose(helper_fp);
     free(label_name);
@@ -770,6 +871,13 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     return 1;
 }
 
+/**
+ * @brief this function check's for the type of the label by checking the buffer
+ * 
+ * @param buffer the buffer to look inside of
+ * @param label_index the start index of the label  
+ * @return int 
+ */
 int check_R_E(char * buffer, int *label_index){
     int index = 0, ret_val = OTHER;
     char STR[8] = {0};
@@ -790,6 +898,13 @@ int check_R_E(char * buffer, int *label_index){
     return ret_val;
 }
 
+/**
+ * @brief check's if the given label name exist's inside the symTable
+ * 
+ * @param name_to_search name to search
+ * @param root  the symTable
+ * @return int 
+ */
 int check_exists(char * name_to_search, symPTR * root){
     symPTR temp = *root;
     int ret_val = 0;
@@ -804,6 +919,15 @@ int check_exists(char * name_to_search, symPTR * root){
     return ret_val;
 }
 
+/**
+ * @brief handles the writing of .data and .string to the ob file using an helper file
+ * 
+ * @param type_dot 
+ * @param helper_fp 
+ * @param buffer 
+ * @param index 
+ * @param root 
+ */
 void handle_data(int type_dot, FILE * helper_fp, char * buffer, int index, symPTR *root){
     int index_bkup, name_len, current_number, minus_flag = 0;
     char *sym_name, current_char, *num_bin_str, *line, *hex_word;
@@ -1083,40 +1207,86 @@ void handle_label(FILE *ob_file, symPTR *root, char *label){
         printf("No such symbol!!\n");
         exit(1);
     }
-    // if (temp->arr[0] == 1){
-    //     /* external */
-    //     fputs("A1-B0-C0-D0-E0\n", ob_file);
-    //     fputs("A1-B0-C0-D0-E0\n", ob_file);
-    //     return;
-    // }
-
-    // if (temp->arr[1] == 1){
-    //     /* entry */
-    //     /* FIRST WORD IS BASE THE OTHER IS OFFSET */
-    //     strcpy(help_word, "0010");
-    //     strcat(help_word, num_to_bin_str(work->baseAddress));
-    //     printf("HELP WORD 1 = [%s]\n", help_word);
-
-    //     strcpy(help_word, "0010");
-    //     strcat(help_word, num_to_bin_str(work->offset));
-    //     printf("HELP WORD 2 = [%s]\n", help_word);
-    //     return;
-    // }
     
+    if (work->arr[0] == 1){
+        /* external */
+        fputs("A1-B0-C0-D0-E0\n", ob_file);
+        fputs("A1-B0-C0-D0-E0\n", ob_file);
+        return;
+    }
+
+    else {
+        /* FIRST WORD IS BASE THE OTHER IS OFFSET */
+        strcpy(help_word, "0010");
+        strcat(help_word, num_to_bin_str(work->baseAddress));
+        /* printf("HELP WORD 1 = [%s]\n", word_to_ob_line(help_word)); */
+        fputs(word_to_ob_line(help_word), ob_file);
+        fputs("\n", ob_file);
+
+                
+        strcpy(help_word, "0010");
+        strcat(help_word, num_to_bin_str(work->offset));
+        /* printf("HELP WORD 2 = [%s]\n", word_to_ob_line(help_word)); */
+        fputs(word_to_ob_line(help_word), ob_file);
+        fputs("\n", ob_file);
+
+        return;
+    }
 }
 
+/**
+ * @brief this function handles the case of two operands as the name suggests
+ *        it checks for the operand type using the mem_mode_node list  
+ *        and depend's on the output to write the coresponding word to the ob file
+ * 
+ * @param buffer        the current line to handle
+ * @param func_t        the func_t type of the current line
+ * @param recover_index the index given by the sending function to indicate the start of the operands
+ * @param number_str    the buffer for the case number
+ * @param reg_str       the buffer for the case register
+ * @param label_name    the buffer for the case label
+ * @param opp1          type of opp1
+ * @param opp2          type of opp2
+ * @param ob_fp         the file pointer of the object file
+ * @param root          the manager of the symTable
+ */
 void handle_two_opps(char * buffer, int func_t ,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, int opp2, FILE *ob_fp, symPTR *root){
     int local_index = 0;
-    if (func_t != 0){
-        printf("NEED FUNCT HELPER WORD!\n");
-    }
+    char *bin_word = (char *)malloc(sizeof(char) * 21), *str_opp1, *str_opp2;
     while(isspace(buffer[recover_index])) ++recover_index;
+
+    if (opp1 == direct_addr && opp2 == direct_addr){
+        strcpy(bin_word, "0100");
+        if (func_t)
+            strcat(bin_word, funct_str[func_t - 10]);
+        else
+            strcat(bin_word, "0000");
+
+        get_reg_str(1, recover_index, buffer, reg_str);
+        while(buffer[recover_index] != ',') ++recover_index;
+        ++recover_index;
+        printf("reg, bin_str: %s\n", reg_str);
+        strcat(bin_word, reg_str);
+        strcat(bin_word, "11");
+        while(isspace(buffer[recover_index])) ++recover_index;                                
+        get_reg_str(2, recover_index, buffer, reg_str);
+        printf("reg, bin_str: %s\n", reg_str);
+        strcat(bin_word, reg_str);
+        strcat(bin_word, "11");
+        printf("[%s]\n", (bin_word));
+        printf("[%s]\n", word_to_ob_line(bin_word));
+        
+        fputs(word_to_ob_line(bin_word), ob_fp);
+        fputs("\n", ob_fp);
+        return;
+    }
         switch (opp1) {
             case num_addr:
                 get_num_str(1, recover_index, buffer, number_str);
                 while(buffer[recover_index] != ',') ++recover_index;
                 ++recover_index;
                 printf("number:%s, negative: %i\n", number_str, number_str[0] == '1');
+                handle_number(ob_fp, number_str);
                 break;
             case direct_addr:
                 /* check  */
@@ -1124,6 +1294,7 @@ void handle_two_opps(char * buffer, int func_t ,int recover_index, char * number
                 while(buffer[recover_index] != ',') ++recover_index;
                 ++recover_index;
                 printf("reg, bin_str: %s\n", reg_str);
+                handle_register(ob_fp, reg_str);
                 break;
             case OTHER:
                 while(buffer[recover_index] != ',' && buffer[recover_index] != ' '){
@@ -1134,9 +1305,10 @@ void handle_two_opps(char * buffer, int func_t ,int recover_index, char * number
                 ++recover_index;
                 label_name[local_index] = '\0';
                 printf("need to check = [%s]\n", label_name);
+                handle_label(ob_fp, root, label_name);
                 break;
             default:
-                printf("WTF?\n");
+                printf("WTF1?\n");
                 break;
         }
         while(isspace(buffer[recover_index])) ++recover_index;                                
@@ -1144,11 +1316,13 @@ void handle_two_opps(char * buffer, int func_t ,int recover_index, char * number
             case num_addr:
                 get_num_str(2, recover_index, buffer, number_str);
                 printf("number:%s, negative: %i\n", number_str, number_str[0] == '1');
+                handle_number(ob_fp, number_str);
                 break;
             case direct_addr:
                 /* check  */
                 get_reg_str(2, recover_index, buffer, reg_str);
                 printf("reg, bin_str: %s\n", reg_str);
+                handle_register(ob_fp, reg_str);
                 break;
             case OTHER:
                 local_index = 0;
@@ -1162,7 +1336,7 @@ void handle_two_opps(char * buffer, int func_t ,int recover_index, char * number
                 handle_label(ob_fp, root, label_name);
                 break;
             default:
-                printf("WTF?\n");
+                printf("WTF2?\n");
                 break;
         }
 }
