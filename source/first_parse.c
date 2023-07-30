@@ -129,11 +129,11 @@ char* get_macro_name(char * buffer, int mode){
 int macro_proccess(char *file_name){
     FILE *fp;
     FILE *w_file;
-    char parsed_filename[strlen(file_name) + 4], *buffer, *macro_name = NULL, *macro_buff, *macro_content = (char* )malloc(LIMIT), *saved_content;
-    int i = 0, size = 1, stop = 0, length = 0, line = 0;
+    char parsed_filename[80 + 4], *buffer, *macro_name = NULL, *macro_buff, *macro_content = (char* )malloc(LIMIT), *saved_content;
+    int size = 1, stop = 0, length = 0, line = 0;
     ENTRY ent, *p_ent;
      /* ------------ get macro parsed name ------------ */
-    char macro_file_name[strlen(file_name) + 4]; 
+    char macro_file_name[80 + 4]; 
     strcpy(macro_file_name, file_name);
     strcat(macro_file_name, ".as");
     fp = fopen(macro_file_name, "r+");
@@ -145,10 +145,10 @@ int macro_proccess(char *file_name){
 
     
     if (!fp || !w_file){
-        printf("[!] File not opened...\n FP: %p\tW_FILE: %p", fp, w_file);
+        printf("[!] File not opened...\n FP: %p\tW_FILE: %p", (void*)fp, (void*)w_file);
         return FILE_EXCEPTION;
     }
-    printf("working on file: %s | file_ptr: %p\n", file_name, fp);
+    printf("working on file: %s | file_ptr: %p\n", file_name, (void *)fp);
     while(!feof(fp)){
         buffer = (char*)malloc(sizeof(char) * LIMIT);
         while (fgets(buffer, LIMIT, fp)) {
@@ -203,15 +203,13 @@ int macro_proccess(char *file_name){
                 ent.key = (void*)macro_name;
                 p_ent = hsearch(ent, FIND);
                 if (p_ent != NULL){
-                    // printf("[!] Found macro %s, content: \n%s\n", macro_name, (char*)p_ent->data);
-                    // fputs("\n", w_file);
+                    /* // printf("[!] Found macro %s, content: \n%s\n", macro_name, (char*)p_ent->data);
+                    // fputs("\n", w_file); */
                     fputs((char*)p_ent->data, w_file);
                 }
                 else{
                     fputs(buffer, w_file);
                 }
-                // fputs(buffer, w_file);
-                // printf("buffer? : %s", buffer);
             }
             else{
                 fputs(buffer, w_file);

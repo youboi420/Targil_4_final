@@ -29,12 +29,12 @@
 };
  */
 int check_mem_mode(char *buffer){
-    int i = 0, ret_val = OTHER, index = 0, start, end, comma_count = 0, flag;
+    int i = 0, ret_val = OTHER, index = 0, comma_count = 0, flag;
     char * reg_name = NULL, *buffer_to_check = (char*)malloc(strlen(buffer) + 2),str[4], reg[4], skip = 0;
     strcpy(buffer_to_check, buffer);
     strcat(buffer_to_check, " ");
     if (strstr(buffer_to_check, "stop") == NULL){
-        //        , sub r1, r2
+        /* //        , sub r1, r2 */
         while(isspace(buffer_to_check[index]) && buffer_to_check[index] != ',' )++index;
         if (buffer_to_check[index] == ',') return COMMENT;
         index += 3;
@@ -79,7 +79,7 @@ int check_mem_mode(char *buffer){
 
         if (buffer_to_check[index] == '#'){
             flag = skip = 1;
-            // ret_val = ret_val & 1;
+            /* ret_val = ret_val & 1; */
             if (ret_val != immediate_addr) ret_val = direct_addr;
         }
         for(i = 0; i < 3; ++i){
@@ -89,7 +89,7 @@ int check_mem_mode(char *buffer){
         reg[i] = '\0';
         index += i;
         if (buffer[index] == ',' ) ret_val = COMMA;
-        if (buffer_to_check[index] == ' ' || buffer_to_check[index] == '\n' || buffer_to_check[index] == '\0' && !skip) {
+        if ((buffer_to_check[index] == ' ' || buffer_to_check[index] == '\n' || buffer_to_check[index] == '\0') && !skip) {
             flag = 0;
             for (i = 0; i < 16; ++i) {
                 reg_name = malloc(sizeof(char) * 4);
@@ -182,19 +182,19 @@ int get_mode(char * instr){
 }
 
 unsigned int instruction_to_word_A(char * instr){
-    // sub r1, HELLO
+    /* // sub r1, HELLO
     // opcode 2 
     // funct 11
     // 0 ARE
     // FIRST WORD  0001 | 0000 | 0000 | 0000 | 0010  
-    // SECOND WORD 0100 | 1011 | 0001 | 11 | 0100 | 11
+    // SECOND WORD 0100 | 1011 | 0001 | 11 | 0100 | 11 */
     return 1;
 }
 
 void word_to_string(unsigned int n, char **str_p){
     unsigned int copy = n, mask = 1;
-    int counter = 0, res = 0;
-    int *P_res = &res;
+    int counter = 0;
+    /* int *P_res = &res; */
     char resault[21];
     while(counter < 20){
         resault[19 - counter] = (copy & mask) ? '1' : '0';
@@ -249,7 +249,7 @@ int check_label_type(char * line, const char * main_pattern){
 int check_label(char * line){
     regex_t rgx;
     int resualt;
-    const char* main_pattern = "^.*[:|.].*$"; // /* insert out special pattern */ = "^[ \t\n]*\\0?$";
+    const char* main_pattern = "^.*[:|.].*$";  /* insert out special pattern  = "^[ \t\n]*\\0?$"; */
     resualt = regcomp(&rgx, main_pattern, REG_EXTENDED);
     if (resualt) {
         regfree(&rgx);

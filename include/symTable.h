@@ -40,4 +40,4 @@ void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int 
 void printToFile_symTable(symPTR* root);
 void destroy_symTable(symPTR *root);
 void print_sym_list(symPTR *root);
-#endif //TARGIL_4_SYMTABLE_H
+#endif

@@ -31,7 +31,7 @@ void insertData_entTable(entPTR node, char *sym, int baseAddress ,int offset){
 }
 
 void printToFile_entTable(entPTR* root, char * file_name){
-    char * buffer, nName[strlen(file_name) + 5];
+    char * buffer, nName[80 + 5];
     char str[10];
     entPTR temp = *root;
     FILE *fp;

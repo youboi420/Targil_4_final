@@ -1,0 +1,119 @@
+---------STARTED STAGE 1 MACRO PARSE---------------
+working on file: 2 | file_ptr: 0x56524192a440
+---------ENDED STAGE 1 MACRO PARSE---------------
+
+---------STARTED STAGE 2 PARSE 1---------------
+[LINE: 101]	; handle dups
+[!] This is a comment should ignore
+
+[LINE: 102]	cmp          #+6  ,       #-2
+MODE: 102 SO WORD IS: 00??0000000000000010
+	A0-B0-C0-D0-E2
+ARR[0] = 14	ARR[1] = 14	Delta: 1
+CMP 
+
+[?] External/Relocatable memory mode
+[LINE: 103]	cmp L1,       L2
+MODE: 102 SO WORD IS: 00??0000000000000010
+	A0-B0-C0-D0-E2
+ARR[0] = -1	ARR[1] = -1	Delta: 5
+CMP 
+
+[1] Direct memory mode
+[LINE: 104]	cmp r4,             r14
+MODE: 102 SO WORD IS: 01000000000000000010
+	A4-B0-C0-D0-E2
+ARR[0] = 11	ARR[1] = 11	Delta: 3
+CMP 
+
+[?] External/Relocatable memory mode
+[LINE: 105]	mov #1, L1
+MODE: 101 SO WORD IS: 00??0000000000000000
+	A0-B0-C0-D0-E0
+ARR[0] = 14	ARR[1] = -1	Delta: 3
+MOV
+
+[?] External/Relocatable memory mode
+[LINE: 106]	MAIN:  prn    #48
+LABEL Should check if usage\definition
+label type: 0
+>   prn    #48 
+ARR[0] = 14	ARR[1] = 0	Delta: 0
+[?!] Unknown type of info
+.Code
+symbol found MAIN
+
+[LINE: 107]	    
+[!] Empty line continuing
+
+[LINE: 108]	.extern MAIN
+LABEL Should check if usage\definition
+label type: 0
+> extern MAIN 
+Turned on
+Name to find = |MAIN|
+STR: .extern
+[^] R:0 E:1	for label: MAIN
+.Extern 
+
+---------ENDED STAGE 2 PARSE 1 STOPPED: 0 | PASSED: 1---------------
+
+IC: 16 | DC: 0
+---------STARTED STAGE 2 PARSE 2---------------
+LABEL: ; handle dups
+
+[LINE: 101] ; handle dups
+
+--------------------
+FIRST WORD: A4-B0-C0-D0-E2
+FUNC_T: 0
+number:0110, negative: 0
+number:1110, negative: 1
+[LINE: 102] cmp          #+6  ,       #-2
+
+--------------------
+FIRST WORD: A4-B0-C0-D0-E2
+FUNC_T: 0
+need to check = [L1]
+need to check = [L2]
+[LINE: 103] cmp L1,       L2
+
+--------------------
+FIRST WORD: A4-B0-C0-D0-E2
+FUNC_T: 0
+reg, bin_str: 0100
+reg, bin_str: 1110
+[LINE: 104] cmp r4,             r14
+
+--------------------
+[LINE: 105] mov #1, L1
+
+--------------------
+LABEL: MAIN:  prn    #48
+
+[LINE: 106] MAIN:  prn    #48
+
+--------------------
+LABEL:     
+
+[LINE: 107]     
+
+--------------------
+[LINE: 108] .extern MAIN
+--------------------
+
+---------ENDED STAGE 2 PARSE 2 STOPPED: 0 | PASSED: 0---------------
+
+
+---------- SYM TABLE -----------
+Symbol: MAIN value: 0 Base_Addres:  0 Offset: 0	external, code, 	LEN:  0
+
+-------- END SYM TABLE --------
+
+------------- MMN LIST ----------------
+LOC: 2, ARR[0] = 14, ARR[1] = 14
+LOC: 3, ARR[0] = -1, ARR[1] = -1
+LOC: 4, ARR[0] = 11, ARR[1] = 11
+LOC: 5, ARR[0] = 14, ARR[1] = -1
+
+------------- END MMN LIST ----------------

@@ -11,7 +11,7 @@ int EXPORT_FILES = 1, IC, DC;
 bool assembler(char * file_name){
     int res;
     bool ret_val = true;
-    char macro_parsed[strlen(file_name) + 4]; 
+    char macro_parsed[80 + 4]; 
     symPTR * root = (symPTR*)malloc(sizeof(symNode));
     mem_mode_node **mmn_root =  (mem_mode_node**)malloc(sizeof(mem_mode_node));
 
@@ -56,17 +56,17 @@ bool assembler(char * file_name){
                 break;
         }
     } 
+    printf("\n---------- SYM TABLE -----------\n");
+    print_sym_list(root);
+    printf("-------- END SYM TABLE --------\n");
 
     if(EXPORT_FILES){
         printf("\n---------STARTED STAGE 2 PARSE 2---------------\n");
-        res = parse2_file_stage_2(macro_parsed, &IC, &DC, EXPORT_FILES, root);
+        res = parse2_file_stage_2(macro_parsed, &IC, &DC, EXPORT_FILES, root, mmn_root);
         printf("\n---------ENDED STAGE 2 PARSE 2 STOPPED: %i | PASSED: %i---------------\n\n", res == STOP, res == PASSED);
     }
     
 
-    printf("\n---------- SYM TABLE -----------\n");
-    print_sym_list(root);
-    printf("-------- END SYM TABLE --------\n");
     print_mmn_list(mmn_root);
     destroy_symTable(root);
     return ret_val;

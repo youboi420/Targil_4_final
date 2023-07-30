@@ -2,7 +2,7 @@
 #include <ctype.h>
 #include <string.h>
 
-typedef enum addresing_mode  {immediate_addr = 10, direct_addr, indx_addr, reg_addr} addresing_mode;
+typedef enum addresing_mode  {immediate_addr = 10, direct_addr, indx_addr, reg_addr, num_addr} addresing_mode;
 
 int trim(char * str_to_cut);
 bool handle_cmp(char * instr);

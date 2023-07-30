@@ -14,8 +14,8 @@ MAIN:  prn    #48
                 m2 
         inc m3
         inc R55
-.entry         MAIN
-.extern ZZ
+;.entry  MAIN
+;.extern ZZ
     stop  
 M: .data 1,2,3
 rts

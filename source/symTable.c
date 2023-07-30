@@ -1,16 +1,15 @@
 #include "../include/symTable.h"
 
 symPTR create_symTable_node(){
-    static int id=0;
     symPTR newSym = (symPTR) malloc(sizeof(symNode));
-    newSym->id = id;
-    id++;
+    int i;
+
     newSym->offset = -1;
     newSym->value = -1;
     newSym->baseAddress = -1;
     newSym->symbol = NULL;
     newSym->next = NULL;
-    for(int i=0; i<N;i++)
+    for(i=0; i<N;i++)
         newSym->arr[i] = 0;
     return newSym;
 }
@@ -30,7 +29,6 @@ void insert_symTable(symPTR* root, symPTR node){
 void print_sym_list(symPTR *root){
     char* buffer;
     char str[10];
-    int index = 0;
     int i;
     symPTR temp = *root;
     if (!temp){
@@ -53,7 +51,7 @@ void print_sym_list(symPTR *root){
         strcat(buffer, str);
         strcat(buffer, "\t");
         for(i=0;i<N; i++){
-            // printf("ARR[%i] = %i\n", i, temp->arr[i]);
+            /* printf("ARR[%i] = %i\n", i, temp->arr[i]); */
             if(temp->arr[i] == 1){
                 if(i == 0) strcat(buffer, "external, ");
                 if (i == 1) strcat(buffer, "entry, ");
@@ -67,7 +65,7 @@ void print_sym_list(symPTR *root){
         strcat(buffer, str); 
         strcat(buffer, "\n");
         printf("%s\n", buffer);
-        temp = temp->next;//NULL;
+        temp = temp->next;
     }
 }
 
@@ -77,25 +75,26 @@ void update_sym_addr(symPTR node, int baseAddress ,int offset){
 }
 
 void insertData_symTable(symPTR node, char *sym,int value, int baseAddress ,int offset , int arr[N], int START_IC, int END_IC){
+    int i;
     node->offset = offset;
     node->value = value;
     node->baseAddress =baseAddress;
     node->symbol = sym;
-    for(int i=0; i<N;i++)
+    for(i=0; i<N;i++)
         node->arr[i] = arr[i];
     node->next = NULL;
 }
 
 void printToFile_symTable(symPTR* root){
     FILE * fp = fopen("symTable.txt", "w");
-    if(fp==NULL){
-        printf("error in open file!\n");
-        return;
-    }
     char* buffer;
     char str[10];
     int i;
     symPTR temp = *root;
+    if(fp==NULL){
+        printf("error in open file!\n");
+        return;
+    }
     while(temp){
         buffer= malloc(sizeof(char)*128);
         strcpy(buffer, temp->symbol);

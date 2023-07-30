@@ -37,7 +37,7 @@ void insertData_extTable(extPTR node, char *sym, int baseAddress ,int offset){
 }
 
 void printToFile_extTable(extPTR* root,char * file_name){
-    char * buffer, nName[strlen(file_name) + 5];
+    char * buffer, nName[80 + 5];
     char str[10];
     extPTR temp = *root;
     FILE *fp;
