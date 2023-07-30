@@ -67,7 +67,7 @@ bool assembler(char * file_name){
     }
     
 
-    print_mmn_list(mmn_root);
+    // print_mmn_list(mmn_root);
     destroy_symTable(root);
     printf("END OF PROG11\n");
     return ret_val;

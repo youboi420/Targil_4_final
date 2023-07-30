@@ -1,4 +1,3 @@
-Z: .data 1,2
 MAIN:  prn    #48
 cmp M, #1
 cmp #1, #2
@@ -8,7 +7,7 @@ cmp r12, r2
 
     macro m1
         inc  r1
-        mov r1, Z
+        mov r3, Z
     endm
     
     mov MAIN, r1
@@ -20,10 +19,13 @@ cmp r12, r2
         inc m3
         inc R55
 .entry  MAIN
-.entry Z
-    stop  
-M: .data 1,2,3
-rts
 K: .string "abcd"
+
 l: .data 1,2
 p: .data 1,2
+M: .data 1,2,3
+
+;.string "abcdz"
+
+.extern  Z
+    stop  

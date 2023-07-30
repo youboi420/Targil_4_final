@@ -16,8 +16,9 @@ void print_mmn_list(mem_mode_node**root);
 void create_ob_file(symPTR *manager, FILE *main_fp,char * file_name);
 void ext_put_zero(char * node_name, symPTR *root);
 void handle_data(int type_dot, FILE *helper_fp, char * buffer,int index, symPTR *root);
-void handle_two_opps(char * buffer, int func_t,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, int opp2, FILE *ob_fp, symPTR *root);
-void handle_label(FILE *ob_file, symPTR *root, char *label);
+void handle_one_opp(char * buffer, int func_t , int *mem_addr,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, FILE *ob_fp, symPTR *root);
+void handle_two_opps(char * buffer, int func_t, int *mem_addr,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, int opp2, FILE *ob_fp, symPTR *root);
+void handle_label(FILE *ob_file, symPTR *root, char *label, int *mem_addr);
 
 int check_R_E(char * buffer, int *label_index);
 int valid_line(char * buffer);
