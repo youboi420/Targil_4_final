@@ -6,9 +6,20 @@
 #include <stdbool.h>
 #include <string.h>
 
+
 int EXPORT_FILES = 1, IC, DC;
 
-bool assembler(char * file_name){
+/**
+ * @brief this is the "main" function of the program it makes use of the first and second parse
+ *        first it takes the name and sends it to the macro proccesor which is extending the macro's calls to the macors's content
+ *        and deletes the degention of the macros itself.
+ *        secondly, it manipulates the given [file_name], it cat's .am then sends the  manipulated version of the name to the second parse first stage
+ *        after stage1 it send to stage this function keeps count of the IC & DC which are updated in the stage 1, and stage 2 functions according to
+ *        the input file
+ * 
+ * @param file_name the working file name  
+ */
+void assembler(char * file_name){
     int res;
     bool ret_val = true;
     char macro_parsed[80 + 4]; 
@@ -70,7 +81,6 @@ bool assembler(char * file_name){
     // print_mmn_list(mmn_root);
     destroy_symTable(root);
     printf("END OF PROG11\n");
-    return ret_val;
 }
 
 int main(int argc, char**argv){

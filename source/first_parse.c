@@ -85,11 +85,12 @@ int check_inst(char * buffer){
 }
 
 /**
- * @brief Get's the macro name from a macro defiend line if mode is 1 else just finds the name 
- * 
- * @param buffer the target to find the macro's name inside it  
- * @return char* the macro's name buffer
- */
+*       @brief creates the .am file
+*           opens the given file name and replaces all the macros defentions with empty lines and the calls
+*           of the macro's to the content itself
+*       @param file_name used to open the file and write the new .proccessed file
+*       @return return FILE_EXCEPTION when there is error with the file , return MACRO_EXCEPRION when the macro is invalid , and PASSED when the function run properly
+*/
 char* get_macro_name(char * buffer, int mode){
     /* the buffer is on the first address */
     char *temp, *macro_name;
@@ -197,7 +198,6 @@ int macro_proccess(char *file_name){
                     }
                 }
                 
-                /* if (! instruction( ) -> insert the macro of current line ("            m1              ") ) */
                 macro_content[0] = '\0'; /* for next iteration */
             }
             else if(check_inst(buffer) == -1){

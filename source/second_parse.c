@@ -105,6 +105,11 @@ int trimNotSpace(char * str_to_cut){
     return i;
 }
 
+/**
+*    @brief check what is the mistake in the uncorrected line using regex patterns.*
+*    @param input_string its current line from the file
+*    @return the function is void
+*/
 void wrongString(char *input_string){
     regex_t regex;
     int index;
@@ -392,8 +397,13 @@ void get_num_str(int mode, int recover_index, char *buffer, char *number_str){
 
 
 
+/**
+*   @brief check if the line is correct using regex patterns.
+*   @param input_string its current line from the file
+*   @return return 1 if the line is correct and 0 when the line is not.
+*/
 int valid_line(char * input_string){
-    int ret_val = 1;
+    int ret_val = 1, i;
     regex_t regex;
     bool ret;
 
@@ -434,7 +444,8 @@ int valid_line(char * input_string){
                         pattEndMac,pattExt,pattEnt,pattData,pattString, pattEmpty};
     /* does not run propely check asap */
     return 1;
-    for (int i = 0; i < NUMPATT; i++) {
+
+    for (i = 0; i < NUMPATT; i++) {
         ret = regcomp(&regex, patterns[i], REG_EXTENDED | REG_ICASE);
         if (ret) {
             fprintf(stderr, "Could not compile regex\n");
@@ -471,22 +482,13 @@ int valid_line(char * input_string){
         }
         regfree(&regex);
         if (ret == 0) {
-            return true; // Return 1 to indicate a match
+            return true;
         }
     }
-    return 0; // Return 0 if no match is found
+    return 0;
 }
 
-/**
- * @brief this function does what we call stage 1 of the second parse it saves all the symbols to the symbole table as required 
- * it makes sure that the assembler is aware of all symbols, 
- * 
- * @param file_name the file name the assembler got 
- * @param IC  the memory addres pointer
- * @param DC  the data addres pointer
- * @param root the symTable manager 
- * @return int returns the function status
- */
+
 int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root, mem_mode_node** mmn_root){
     FILE *fp = fopen(file_name, "r+");
     char * buffer = (char *)malloc(sizeof(char) * 82), *  find_sym,  c, *word, *copy, sym_name[74] = {'\0'};
@@ -797,15 +799,6 @@ int parse2_file_stage_1(char * file_name, int *IC, int *DC, symPTR * root, mem_m
     return ret_val;
 }
 
-/**
- * @brief this function parses the file for the last time before outputing the requested files if the EXPORT_FILES flag is on
- * 
- * @param file_name the file to parse
- * @param IC 
- * @param DC 
- * @param EXPORT_FILES the flag wheter to export or not
- * @return int 
- */
 int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, symPTR * root, mem_mode_node ** mmn_root){
     FILE *main_fp, *helper_fp;
     FILE *ob_fp;
@@ -845,7 +838,6 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     /* initilize the root's */
     *ent_root = NULL;
     *ext_root = NULL;
-    
 
     while( curr ){
         /* check's only ext and ent */
@@ -877,7 +869,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     
     
     /* create's the ext and ent files */
-    if(file_name_copy_no_delim){
+    if(file_name_copy_no_delim && EXPORT_FILES){
         printToFile_entTable(ent_root, file_name_copy_no_delim);
         printToFile_extTable(ext_root, file_name_copy_no_delim);
     }
@@ -894,7 +886,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
         fgets(buffer, 81, main_fp);
         /* in the start of the label/code */
         index = trim(buffer);
-        if(buffer[index] == '.'){
+        if(buffer[index] == '.' && EXPORT_FILES){
             /* // x: prn # */
             type_dot = check_arrtib(buffer, index);
             handle_data(type_dot, helper_fp, buffer, index, root);
@@ -1088,13 +1080,7 @@ int parse2_file_stage_2(char * file_name, int *IC, int *DC, int EXPORT_FILES, sy
     return 1;
 }
 
-/**
- * @brief this function check's for the type of the label by checking the buffer
- * 
- * @param buffer the buffer to look inside of
- * @param label_index the start index of the label  
- * @return int 
- */
+
 int check_R_E(char * buffer, int *label_index){
     int index = 0, ret_val = OTHER;
     char STR[8] = {0};
@@ -1115,13 +1101,7 @@ int check_R_E(char * buffer, int *label_index){
     return ret_val;
 }
 
-/**
- * @brief check's if the given label name exist's inside the symTable
- * 
- * @param name_to_search name to search
- * @param root  the symTable
- * @return int 
- */
+
 int check_exists(char * name_to_search, symPTR * root){
     symPTR temp = *root;
     int ret_val = 0;
@@ -1136,38 +1116,12 @@ int check_exists(char * name_to_search, symPTR * root){
     return ret_val;
 }
 
-/**
- * @brief handles the writing of .data and .string to the ob file using an helper file
- * 
- * @param type_dot 
- * @param helper_fp 
- * @param buffer 
- * @param index 
- * @param root 
- */
+
 void handle_data(int type_dot, FILE * helper_fp, char * buffer, int index, symPTR *root){
     int index_bkup, name_len, current_number, minus_flag = 0;
     char *sym_name, current_char, *num_bin_str, *line, *hex_word;
     line = (char *)malloc(sizeof(char) * 21);
     switch (type_dot) {
-                case EXT:
-                    /* printf("type: EXT, %s\n", &buffer[index]);
-                     * put zero inside the symTable if you find the label
-                     */
-                    index += 7;
-                    index_bkup = index;
-                    while(isspace(buffer[index])) ++index;
-                    sym_name = (char *)malloc(74); /* the size of the string without .extern */
-                    strcpy(sym_name, &buffer[index]);
-                    name_len = 0;
-                    while(!isspace(buffer[index])) {
-                        ++name_len;
-                        ++index;
-                    }
-                    sym_name[name_len] = '\0';
-                    index = index_bkup;
-                    ext_put_zero(sym_name, root);
-                    break;
                 case STR:
                     index += 7; 
                     while(buffer[index]){
@@ -1324,13 +1278,7 @@ int calc_delta(int arr[2]){
     return sum;
 }
 
-/**
- * @brief this function checks for symbol's/variable name inside the given buffer and inc's the given stopped cariable pointer 
- * 
- * @param buffer the string to look for a label's name inside
- * @param stopped  the pointer to the stopped index
- * @return char* 
- */
+
 char * find_symbol(char * buffer, int *stopped){
     int index = 0;
     char * name = (char *)malloc(80);
@@ -1514,23 +1462,6 @@ void handle_one_opp(char * buffer, int func_t , int *mem_addr,int recover_index,
     }
 }
 
-
-/**
- * @brief this function handles the case of two operands as the name suggests
- *        it checks for the operand type using the mem_mode_node list  
- *        and depend's on the output to write the coresponding word to the ob file
- * 
- * @param buffer        the current line to handle
- * @param func_t        the func_t type of the current line
- * @param recover_index the index given by the sending function to indicate the start of the operands
- * @param number_str    the buffer for the case number
- * @param reg_str       the buffer for the case register
- * @param label_name    the buffer for the case label
- * @param opp1          type of opp1
- * @param opp2          type of opp2
- * @param ob_fp         the file pointer of the object file
- * @param root          the manager of the symTable
- */
 void handle_two_opps(char * buffer, int func_t, int *mem_addr,int recover_index, char * number_str, char * reg_str, char * label_name, int opp1, int opp2, FILE *ob_fp, symPTR *root){
     int local_index = 0;
     char *bin_word = (char *)malloc(sizeof(char) * 21);

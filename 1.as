@@ -25,5 +25,4 @@ M: .data 1,2,3
 
 .string "abcdz"
 
-.extern  Z
-stop
+.extern  Z  
