@@ -205,18 +205,18 @@ void wrongString(char *input_string){
     }
 }
 
-void handle_number(FILE *ob_file, char *number_str, int *mem_addr){
+void handle_number(FILE *ob_file, char *number_bin_str, int *mem_addr){
     char *bin_word = (char *)malloc(sizeof(char) * 21);
     if (!bin_word){
         printf("Error in malloc handle\n");
         return;
     }
-    if ( number_str[0] == '1' ){
+    if ( number_bin_str[0] == '1' ){
         strcpy(bin_word, "0100111111");
     }
     else{
         strcpy(bin_word, "0100000000");
-        strcat(bin_word, number_str);
+        strcat(bin_word, number_bin_str);
         strcat(bin_word, "110000");
     }
 
@@ -227,7 +227,7 @@ void handle_number(FILE *ob_file, char *number_str, int *mem_addr){
     free(bin_word);
 }
 
-void handle_register(FILE *ob_file, char *reg_str, int *mem_addr){
+void handle_register(FILE *ob_file, char *reg_bin_str, int *mem_addr){
     char *bin_word = (char *)malloc(sizeof(char) * 21);
     if (!bin_word){
         printf("Error in malloc handle\n");
@@ -235,7 +235,7 @@ void handle_register(FILE *ob_file, char *reg_str, int *mem_addr){
     }
     
     strcpy(bin_word, "0100000000");
-    strcat(bin_word, reg_str);
+    strcat(bin_word, reg_bin_str);
     strcat(bin_word, "110000");
 
     fprintf(ob_file, "[%4i] ", (*mem_addr)++);
